@@ -87,7 +87,8 @@ Todo lo demás es 100% estático: **no hay build ni backend**.
     (ntfy sólo cachea ~12 h). Deduplica por `id` contra el espejo.
   - **`BroadcastChannel`**: sincronización instantánea entre pestañas del mismo equipo y respaldo offline.
   - **`Realtime.estadoRemoto()`** → `'conectado' | 'sin-conexion' | 'local'` (el dashboard muestra un aviso si cae).
-  - ⚠️ El **tópico ntfy es público**: `expo-ies11-2026-vocacional-9b3f2a` (constante `TOPIC` en `realtime.js`).
+  - ⚠️ El **tópico ntfy es público**: `expo-ies11-2026-vocacional-<sufijo>` (`TOPIC_BASE` + `SUFIJO_DEFECTO`
+    en `realtime.js`; el sufijo se puede sobrescribir localmente con `Realtime.rotarCanal()`).
     Cualquiera que sepa el nombre puede leer/escribir. Cambiá el sufijo para "resetear" el canal de raíz.
     **No enviar datos sensibles.**
   - Interfaz estable (`publicar` / `suscribirse` / `suscribirseAReinicio` / `obtenerHistorial` /
@@ -116,15 +117,37 @@ Todo lo demás es 100% estático: **no hay build ni backend**.
   Se muestra en el modal "ℹ Ver información de la carrera" de la pantalla final.
   **Textos orientativos y editables** por el Instituto — no son el plan de estudios oficial.
 
-## Dashboard: dos vistas + CSV
+## Panel analítico del dashboard
 
-- **Conmutador de vista** (barra superior):
-  - **Vista General** → KPI + Podio Top 3 (🥇🥈🥉) + barras multicolor por área + dona por área.
-  - **Vista Detallada (18 Tecnicaturas)** → las 18 ordenadas de más a menos votada, con la cantidad
-    exacta de votos y el % sobre el total de participantes.
-- **Filtro por Jornada**: Global / Día 1 / Día 2 / Día 3 (fechas locales distintas presentes, en orden).
-- **Exportar Dataset CSV**: pide el PIN `admin11`, delimitador `;`, UTF-8 con BOM. Columnas:
-  `ID; Fecha_Hora; Nombre; Apellido; Edad; Localidad; Situacion_Educativa; Top1_Carrera; Top2_Carrera; Top3_Carrera`.
+Estructura modular por tarjetas — **todo reacciona al filtro por Jornada** (Global / Día 1-3):
+
+- **Fila KPI** (siempre visible): *Encuestados totales* · *Edad promedio* (calculada sobre quienes
+  indicaron su edad) · *Carrera más elegida* (la N.° 1 del ranking, con el color de su área).
+- **Vista General**:
+  - *Ranking de las 18 tecnicaturas* — barras horizontales por total de apariciones, color por área.
+  - *Presencia en las 3 afinidades principales* — barras apiladas 1.ª / 2.ª / 3.ª opción por carrera.
+  - *Áreas vocacionales* — anillo + leyenda **expandible**: al tocar un área lista sus carreras.
+  - *Podio Top 3* (🥇🥈🥉) y *Feed* de actividad.
+- **Vista Detallada**:
+  - *Desglose por tecnicatura* — las 18 de más a menos votada, votos exactos y % sobre el total.
+  - **Demografía**: *Situación educativa* · *Origen / localidad* (top localidades) ·
+    *Por género y edad* (distribución por género y por rango etario `<18 / 18-24 / 25-34 / 35+`).
+- **Textos explicativos** bajo cada rótulo de panel indicando qué se está analizando.
+
+### Datos del formulario
+
+El test recoge nombre, apellido, edad, **género (opcional)**, localidad (`<select>` de Jujuy) y
+situación educativa (`<select>`: cursando 3.°/4.°, último año, egresado, estudiando y trabajando, otra).
+
+### Exportar / limpiar
+
+- **Exportar Dataset CSV** (footer): PIN `admin11`, `;` + UTF-8 con BOM. Columnas:
+  `ID; Fecha_Hora; Nombre; Apellido; Edad; Genero; Localidad; Situacion_Educativa;
+  Top1_Carrera; Top2_Carrera; Top3_Carrera`. Exporta la jornada seleccionada.
+- **🧹 Limpiar datos de prueba** (footer, modo administrador): PIN `admin11` + confirmación →
+  `Realtime.reiniciar()`. Deja los contadores en cero **en todos los equipos conectados al canal**
+  (publica un marcador de reinicio por ntfy). Para un canal 100% nuevo para la jornada oficial:
+  cambiar `SUFIJO_DEFECTO` en `js/realtime.js` y volver a subir (o `Realtime.rotarCanal()` por consola).
 
 ## Estado del proyecto
 
@@ -173,20 +196,15 @@ Probar la sincronización real: abrir el dashboard en el celular y el test en ot
 - Botón **"Descargar / Guardar mi Resultado"** → genera un **PNG** (canvas, sin conexión) con el Top 3
   para que el alumno se lo lleve. Botón **"Volver a hacer el test"** reinicia el flujo.
 
-### Dashboard: acceso, vistas y exportación
+### Dashboard: acceso
 
 - **Acceso con PIN**: al abrir `dashboard.html` pide la clave **`admin11`**. Sin clave (3 intentos)
   redirige a `index.html`. El equipo del stand queda recordado tras validar una vez.
-- **Vista General / Vista Detallada**: conmutador en la barra superior. La Detallada lista las 18
-  tecnicaturas de más a menos votada con votos exactos y % sobre el total de participantes.
-- **Filtro por Jornada**: "Global (Toda la Expo) / Día 1 / Día 2 / Día 3" (fechas locales distintas
-  presentes en los datos, en orden).
-- **Exportar Dataset CSV** (footer): pide el PIN `admin11`, `.csv` **delimitado por `;`**, UTF-8 con BOM.
-  Columnas: `ID; Fecha_Hora; Nombre; Apellido; Edad; Localidad; Situacion_Educativa;
-  Top1_Carrera; Top2_Carrera; Top3_Carrera`. Exporta la jornada seleccionada.
-  - El dataset se arma del historial acumulado en **ese navegador** (espejo `localStorage`), que
-    incluye todo lo recibido por ntfy mientras el dashboard estuvo abierto. La netbook del stand
-    debe quedar abierta durante la Expo para no perder registros más viejos que la caché de ntfy (~12 h).
+- La estructura completa del panel (KPI, vistas, demografía, export, limpiar) está descrita más
+  arriba en **"Panel analítico del dashboard"**.
+- El dataset se arma del historial acumulado en **ese navegador** (espejo `localStorage`), que
+  incluye todo lo recibido por ntfy mientras el dashboard estuvo abierto. La netbook del stand
+  debe quedar abierta durante la Expo para no perder registros más viejos que la caché de ntfy (~12 h).
 
 ---
 
@@ -195,9 +213,8 @@ Probar la sincronización real: abrir el dashboard en el celular y el test en ot
 El sitio es estático: se sube tal cual, sin compilar. **Antes de publicar**:
 1. Poné la URL real en `index.html` (`<link rel="canonical">` y `og:*` / `twitter:*` — hoy tienen el
    placeholder `https://expo-educativa-ies11.vercel.app/`).
-2. Cambiá el sufijo del `TOPIC` en `js/realtime.js` por uno nuevo y privado, así arrancás con el
-   canal limpio (los `_config` y comentarios explican cómo). No agregues `Content-Security-Policy`:
-   bloquearía las conexiones a `ntfy.sh`.
+2. Cambiá `SUFIJO_DEFECTO` en `js/realtime.js` por uno nuevo y privado, así arrancás con el canal
+   limpio. No agregues `Content-Security-Policy`: bloquearía las conexiones a `ntfy.sh`.
 3. Confirmá el PIN del dashboard en `js/dashboard-auth.js` (por defecto `admin11`).
 
 ### Opción A · Vercel (CLI)

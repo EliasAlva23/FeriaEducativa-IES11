@@ -82,9 +82,10 @@
   function procesarFormulario(form) {
     const nombre = capitalizarNombre(form.nombre.value);
     const apellido = capitalizarNombre(form.apellido.value);
-    // 'localidad' es un <select> con valores ya normalizados: se toma tal cual.
+    // 'localidad' y 'genero' son <select> con valores ya normalizados.
     const localidad = limpiarTexto(form.localidad.value);
     const situacionEducativa = limpiarTexto(form.situacionEducativa.value);
+    const genero = form.genero ? limpiarTexto(form.genero.value) : '';
     const edadNum = parseInt(limpiarTexto(form.edad.value), 10);
 
     // Limpiar marcas de error previas
@@ -111,7 +112,10 @@
 
     return {
       ok: true,
-      participante: { nombre, apellido, edad: edadNum, localidad, situacionEducativa },
+      participante: {
+        nombre, apellido, edad: edadNum, localidad, situacionEducativa,
+        genero: genero || 'Sin especificar',
+      },
     };
   }
 
