@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <title>Generador de QR · Expo Educativa 2026</title>
+
+  <!--
+    ============================================================
+    GENERADOR DE CÓDIGO QR  (tools/qr.html)
+    ============================================================
+    Herramienta interna para el equipo: pegar la URL pública del
+    proyecto y descargar el QR en PNG (alta resolución) o SVG para
+    imprimir en folletos y banners de la Expo Educativa 2026.
+
+    - No necesita instalar nada: abrir este archivo en el navegador.
+    - Usa qrcodejs (CDN). Corrección de errores nivel H (30%),
+      así se puede imprimir el logo encima sin romper la lectura.
+    - Alternativa por consola (Node): ver README.md → "Código QR".
+    ============================================================
+  -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    :root { --marino: #02447B; --vivo: #346FB0; --violeta: #7B79B1; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 2rem 1rem;
+      font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      color: #0e2740; background: #eef2f8;
+      display: flex; flex-direction: column; align-items: center; gap: 1.25rem;
+    }
+    h1 { font-size: 1.25rem; margin: 0; }
+    .panel {
+      background: #fff; border: 1px solid #dbe3ee; border-radius: 14px;
+      padding: 1.25rem; width: 100%; max-width: 460px;
+      box-shadow: 0 8px 24px -12px rgba(2,68,123,.28);
+    }
+    label { display: block; font-weight: 600; margin-bottom: .35rem; }
+    input, select {
+      width: 100%; padding: .55rem .7rem; font-size: .95rem;
+      border: 1.5px solid #c3d0e2; border-radius: 8px; margin-bottom: .9rem;
+    }
+    .fila { display: flex; gap: .75rem; }
+    .fila > div { flex: 1; }
+    button {
+      width: 100%; padding: .7rem 1rem; font-size: .95rem; font-weight: 700;
+      color: #fff; background: linear-gradient(135deg, var(--violeta), var(--vivo));
+      border: 0; border-radius: 8px; cursor: pointer;
+    }
+    #qr-wrap {
+      display: flex; flex-direction: column; align-items: center; gap: 1rem;
+      background: #fff; border: 1px solid #dbe3ee; border-radius: 14px; padding: 1.5rem;
+    }
+    #qr { line-height: 0; }
+    #qr img, #qr canvas { width: 320px; height: 320px; }
+    .acciones { display: flex; gap: .75rem; flex-wrap: wrap; justify-content: center; }
+    .acciones a {
+      text-decoration: none; font-weight: 700; font-size: .9rem;
+      padding: .55rem .9rem; border-radius: 8px; border: 1.5px solid var(--vivo); color: var(--vivo);
+    }
+    .pie { font-size: .8rem; color: #5b6b7e; text-align: center; max-width: 460px; }
+    code { background: #e6edf6; padding: .1rem .35rem; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <h1>Generador de QR · Expo Educativa 2026</h1>
+
+  <form id="form" class="panel">
+    <label for="url">URL pública del test</label>
+    <input id="url" type="url" placeholder="https://expo-educativa-ies11.vercel.app/"
+           value="https://expo-educativa-ies11.vercel.app/" required />
+
+    <div class="fila">
+      <div>
+        <label for="tam">Tamaño (px)</label>
+        <select id="tam">
+          <option>512</option>
+          <option selected>1024</option>
+          <option>2048</option>
+        </select>
+      </div>
+      <div>
+        <label for="margen">Margen</label>
+        <select id="margen">
+          <option>0</option>
+          <option selected>16</option>
+          <option>32</option>
+        </select>
+      </div>
+    </div>
+
+    <button type="submit">Generar QR</button>
+  </form>
+
+  <div id="qr-wrap" hidden>
+    <div id="qr"></div>
+    <div class="acciones">
+      <a id="dl-png" download="qr-expo-educativa-2026.png">Descargar PNG</a>
+      <a id="dl-svg" download="qr-expo-educativa-2026.svg">Descargar SVG</a>
+    </div>
+  </div>
+
+  <p class="pie">
+    Corrección de errores nivel <strong>H</strong> (tolera ~30% de daño): el QR sigue
+    leyéndose aunque se imprima chico o con el logo encima. Para banners grandes usá
+    el tamaño <code>2048</code> y exportá en SVG.
+  </p>
+
+  <script>
+    var form = document.getElementById('form');
+    var wrap = document.getElementById('qr-wrap');
+    var cont = document.getElementById('qr');
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var url = document.getElementById('url').value.trim();
+      var tam = parseInt(document.getElementById('tam').value, 10);
+      var margen = parseInt(document.getElementById('margen').value, 10);
+      if (!url) return;
+
+      cont.innerHTML = '';
+      new QRCode(cont, {
+        text: url,
+        width: tam,
+        height: tam,
+        correctLevel: QRCode.CorrectLevel.H,
+        colorDark: '#02447B',
+        colorLight: '#ffffff'
+      });
+      wrap.hidden = false;
+
+      // Esperar a que qrcodejs pinte el canvas
+      setTimeout(function () {
+        var canvas = cont.querySelector('canvas');
+        var png = canvas
+          ? canvas.toDataURL('image/png')
+          : cont.querySelector('img').src;
+
+        // PNG con margen (quiet zone) dibujando sobre un canvas más grande
+        var out = document.createElement('canvas');
+        out.width = tam + margen * 2;
+        out.height = tam + margen * 2;
+        var ctx = out.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, out.width, out.height);
+        var im = new Image();
+        im.onload = function () {
+          ctx.drawImage(im, margen, margen, tam, tam);
+          document.getElementById('dl-png').href = out.toDataURL('image/png');
+        };
+        im.src = png;
+
+        // SVG vectorial (módulos como <rect>), ideal para imprenta
+        document.getElementById('dl-svg').href =
+          'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgDesde(url, margen));
+      }, 60);
+    });
+
+    // Genera un SVG del QR usando el mismo motor (matriz interna de qrcodejs)
+    function svgDesde(text, margen) {
+      var qr = new QRCode(document.createElement('div'), {
+        text: text, width: 256, height: 256, correctLevel: QRCode.CorrectLevel.H
+      });
+      var model = qr._oQRCode;               // objeto QRCode interno
+      var n = model.getModuleCount();
+      var size = n + margen * 2;
+      var rects = '';
+      for (var r = 0; r < n; r++) {
+        for (var c = 0; c < n; c++) {
+          if (model.isDark(r, c)) {
+            rects += '<rect x="' + (c + margen) + '" y="' + (r + margen) + '" width="1" height="1"/>';
+          }
+        }
+      }
+      return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + size + ' ' + size + '" shape-rendering="crispEdges">' +
+             '<rect width="100%" height="100%" fill="#ffffff"/>' +
+             '<g fill="#02447B">' + rects + '</g></svg>';
+    }
+  </script>
+</body>
+</html>

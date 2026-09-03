@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#02447B" />
+
+  <!-- ===================== SEO ===================== -->
+  <title>Test Vocacional · Expo Educativa 2026 · IES N.° 11</title>
+  <meta name="description"
+        content="Test Vocacional de la Expo Educativa 2026 del IES N.° 11 (San Salvador de Jujuy). 10 preguntas para descubrir qué tecnicatura tiene más que ver con vos." />
+  <meta name="keywords"
+        content="IES N.° 11, Expo Educativa 2026, test vocacional, tecnicaturas, Jujuy, orientación vocacional" />
+  <meta name="author" content="Tech &amp; Innovation Team - IES N.° 11" />
+  <meta name="robots" content="index, follow" />
+  <!-- TODO: reemplazar por la URL pública real tras el deploy -->
+  <link rel="canonical" href="https://expo-educativa-ies11.vercel.app/" />
+
+  <!-- ================ Open Graph / Facebook ================ -->
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content="es_AR" />
+  <meta property="og:site_name" content="Expo Educativa 2026 · IES N.° 11" />
+  <meta property="og:title" content="Test Vocacional · Expo Educativa 2026" />
+  <meta property="og:description"
+        content="Descubrí en 10 preguntas qué tecnicatura del IES N.° 11 va con vos." />
+  <meta property="og:url" content="https://expo-educativa-ies11.vercel.app/" />
+  <meta property="og:image" content="https://expo-educativa-ies11.vercel.app/img/og-cover.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+
+  <!-- ===================== Twitter ===================== -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Test Vocacional · Expo Educativa 2026 · IES N.° 11" />
+  <meta name="twitter:description"
+        content="Descubrí en 10 preguntas qué tecnicatura del IES N.° 11 va con vos." />
+  <meta name="twitter:image" content="https://expo-educativa-ies11.vercel.app/img/og-cover.png" />
+
+  <!-- Favicon: marcador "11" en SVG (reemplazable por img/logo-ies11.png) -->
+  <link rel="icon" type="image/svg+xml"
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='32' fill='%2302447B'/%3E%3Ctext x='32' y='43' font-size='34' font-family='Arial,sans-serif' font-weight='bold' fill='white' text-anchor='middle'%3E11%3C/text%3E%3C/svg%3E" />
+
+  <!--
+    ============================================================
+    APP MÓVIL DEL ESTUDIANTE  (index.html)
+    ============================================================
+    Interfaz tipo "tarjetas" para el Test Vocacional en el celular.
+    Flujo: formulario -> 10 preguntas -> Top 3 de tecnicaturas.
+    Las respuestas viajan al Dashboard del stand en tiempo real
+    (js/realtime.js, vía ntfy.sh — funciona entre dispositivos).
+
+    Secciones (IDs usados por js/app.js):
+      #pantalla-bienvenida  -> formulario inicial
+      #pantalla-test        -> tarjetas de preguntas
+      #pantalla-resultado   -> Top 3 + perfil por área
+
+    Identidad: paleta oficial IES N.° 11 + toggle claro/oscuro
+    (js/theme.js). Layout con Tailwind, color con css/styles.css.
+    ============================================================
+  -->
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="js/theme.js"></script>
+
+  <!-- Tipografía institucional -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" />
+
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body class="min-h-screen antialiased">
+
+  <!-- ====================================================== -->
+  <!-- ENCABEZADO INSTITUCIONAL                                -->
+  <!-- Izquierda: institución · Centro: evento · Derecha: tema -->
+  <!-- ====================================================== -->
+  <header class="app-header">
+    <div class="app-header__inst">
+      <img src="img/logo-ies11.png" alt="Escudo IES N.° 11" class="app-header__escudo"
+           onerror="this.style.display='none';this.nextElementSibling.hidden=false" />
+      <span class="escudo-fb" hidden>11</span>
+      <span class="app-header__inst-text">
+        <strong>IES N.° 11</strong>
+        <small>Tecnicatura Superior Ciencia de Datos e IA</small>
+      </span>
+    </div>
+
+    <div class="app-header__title">
+      <h1>Expo Educativa 2026</h1>
+      <p>Test Vocacional</p>
+    </div>
+
+    <div class="app-header__team">
+      <button type="button" class="tema-toggle" data-toggle-tema aria-label="Cambiar modo claro / oscuro">
+        <span class="icono-luna" aria-hidden="true">🌙</span>
+        <span class="icono-sol" aria-hidden="true">☀️</span>
+      </button>
+
+      <div class="menu-opciones">
+        <button type="button" class="menu-opciones__btn" id="btn-menu"
+                aria-haspopup="true" aria-expanded="false" aria-label="Más opciones">⋮</button>
+        <div class="menu-opciones__panel" id="menu-panel" hidden>
+          <a class="menu-opciones__item" href="dashboard.html" target="_blank" rel="noopener">
+            📊 Pantalla Gigante (Dashboard)
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="mx-auto w-full max-w-md px-4 pb-10 pt-6">
+
+    <!-- ================================================== -->
+    <!-- PANTALLA 1: BIENVENIDA + FORMULARIO INICIAL         -->
+    <!-- ================================================== -->
+    <section id="pantalla-bienvenida" class="space-y-5">
+      <div class="panel p-5">
+        <h2 class="titulo-seccion text-lg">Test Vocacional</h2>
+        <p class="texto-suave mt-1 text-sm">
+          10 preguntas rápidas para descubrir qué tecnicaturas del IES N.° 11 tienen
+          más que ver con vos. Al final vas a ver tu <strong>Top 3</strong>.
+        </p>
+      </div>
+
+      <form id="form-participante" class="panel p-5 space-y-4" novalidate>
+        <div>
+          <label for="f-nombre" class="etiqueta">Nombre</label>
+          <input id="f-nombre" name="nombre" type="text" autocomplete="given-name" class="campo" />
+        </div>
+        <div>
+          <label for="f-apellido" class="etiqueta">Apellido</label>
+          <input id="f-apellido" name="apellido" type="text" autocomplete="family-name" class="campo" />
+        </div>
+        <div>
+          <label for="f-edad" class="etiqueta">Edad</label>
+          <input id="f-edad" name="edad" type="number" inputmode="numeric" min="10" max="99" class="campo" />
+        </div>
+        <div>
+          <label for="f-localidad" class="etiqueta">Localidad</label>
+          <select id="f-localidad" name="localidad" class="campo">
+            <option value="">Elegí una opción…</option>
+            <option value="San Salvador de Jujuy">San Salvador de Jujuy</option>
+            <option value="Palpalá">Palpalá</option>
+            <option value="Perico">Perico</option>
+            <option value="El Carmen">El Carmen</option>
+            <option value="Monterrico">Monterrico</option>
+            <option value="San Pedro de Jujuy">San Pedro de Jujuy</option>
+            <option value="Libertador General San Martín">Libertador General San Martín</option>
+            <option value="Humahuaca / Quebrada">Humahuaca / Quebrada</option>
+            <option value="Tilcara">Tilcara</option>
+            <option value="La Quiaca / Puna">La Quiaca / Puna</option>
+            <option value="Otra localidad de Jujuy">Otra localidad de Jujuy</option>
+            <option value="Otra provincia / País">Otra provincia / País</option>
+          </select>
+        </div>
+        <div>
+          <label for="f-situacion" class="etiqueta">Situación educativa</label>
+          <select id="f-situacion" name="situacionEducativa" class="campo">
+            <option value="">Elegí una opción…</option>
+            <option value="Secundario en curso">Secundario en curso</option>
+            <option value="Secundario completo">Secundario completo</option>
+            <option value="Terciario/Universitario en curso">Terciario/Universitario en curso</option>
+            <option value="Estudios interrumpidos">Estudios interrumpidos</option>
+            <option value="Otra">Otra</option>
+          </select>
+        </div>
+
+        <p id="form-error" class="form-error hidden"></p>
+
+        <button type="submit" class="btn btn--primario w-full">Comenzar el test</button>
+      </form>
+    </section>
+
+    <!-- ================================================== -->
+    <!-- PANTALLA 2: TARJETAS DE PREGUNTAS DEL TEST          -->
+    <!-- ================================================== -->
+    <section id="pantalla-test" class="hidden space-y-4">
+      <div class="flex items-center gap-3">
+        <div id="barra-progreso" class="progreso-track flex-1">
+          <div id="barra-progreso-fill" class="progreso-fill" style="width:0%"></div>
+        </div>
+        <span id="progreso-texto" class="texto-suave text-xs font-semibold tabular-nums">0/0</span>
+      </div>
+
+      <div id="contenedor-tarjeta"></div>
+
+      <div class="flex items-center justify-between">
+        <button id="btn-anterior" type="button" class="btn btn--texto" disabled>← Anterior</button>
+        <button id="btn-siguiente" type="button" class="btn btn--solido" disabled>Siguiente →</button>
+      </div>
+    </section>
+
+    <!-- ================================================== -->
+    <!-- PANTALLA 3: RESULTADO / TOP 3 DE CARRERAS           -->
+    <!-- ================================================== -->
+    <section id="pantalla-resultado" class="hidden space-y-4">
+      <div id="contenedor-resultado"></div>
+      <div class="grid grid-cols-1 gap-3">
+        <button id="btn-descargar" type="button" class="btn btn--primario w-full">
+          ⬇ Descargar / Guardar mi Resultado
+        </button>
+        <button id="btn-reiniciar" type="button" class="btn btn--fantasma w-full">
+          ↻ Volver a hacer el test
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ====================================================== -->
+  <!-- PIE DE PÁGINA INSTITUCIONAL                             -->
+  <!-- ====================================================== -->
+  <footer class="app-footer">
+    <div class="app-footer__row">
+      <a href="https://maps.app.goo.gl/infU3zgHUbP6jBt77" target="_blank" rel="noopener noreferrer">
+        📍 Gral. Alvear 1145, Y4600 San Salvador de Jujuy
+      </a>
+      <a href="tel:+543885766624">📞 0388 576-6624</a>
+      <a href="https://www.facebook.com/profile.php?id=100066551990089" target="_blank" rel="noopener noreferrer">
+        📘 Facebook oficial IES N.° 11
+      </a>
+    </div>
+
+    <div class="app-footer__dev">
+      <img src="img/logo-TIT.png" alt="Tech &amp; Innovation Team" class="app-footer__tit" />
+      <span> Tech &amp; Innovation Team — IES N.° 11</span>
+    </div>
+  </footer>
+
+  <!-- ====================================================== -->
+  <!-- MODAL: información de la carrera                         -->
+  <!-- ====================================================== -->
+  <div id="modal-carrera" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="modal-carrera-titulo">
+    <div class="modal__fondo" data-modal-fondo></div>
+    <div class="modal__caja">
+      <button type="button" class="modal__x" data-modal-cerrar aria-label="Cerrar">✕</button>
+      <span class="modal__chip" data-modal-area></span>
+      <h3 id="modal-carrera-titulo" class="modal__titulo" data-modal-titulo></h3>
+
+      <div class="modal__bloque">
+        <p class="modal__rotulo">¿De qué se trata?</p>
+        <p data-modal-descripcion></p>
+      </div>
+      <div class="modal__bloque">
+        <p class="modal__rotulo">Perfil del egresado</p>
+        <p data-modal-perfil></p>
+      </div>
+      <div class="modal__bloque">
+        <p class="modal__rotulo">Campo laboral</p>
+        <p data-modal-campo></p>
+      </div>
+
+      <button type="button" class="btn btn--primario w-full mt-2" data-modal-cerrar>Cerrar</button>
+    </div>
+  </div>
+
+  <!-- ====================================================== -->
+  <!-- SCRIPTS                                                 -->
+  <!-- ====================================================== -->
+  <script src="js/questions.js"></script>
+  <script src="js/realtime.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

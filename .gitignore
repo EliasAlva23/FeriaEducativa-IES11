@@ -1,0 +1,16 @@
+# Dependencias / build
+node_modules/
+dist/
+.vercel/
+.netlify/
+
+# Salidas del generador de QR
+tools/qr-*.png
+tools/qr-*.svg
+
+# Sistema operativo / editores
+.DS_Store
+Thumbs.db
+*.log
+.idea/
+.vscode/

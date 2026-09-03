@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#02447B" />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="description" content="Panel en vivo del Test Vocacional · Expo Educativa 2026 · IES N.° 11." />
+  <title>Dashboard en Vivo · Expo Educativa 2026 · IES N.° 11</title>
+  <link rel="icon" type="image/svg+xml"
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='32' fill='%2302447B'/%3E%3Ctext x='32' y='43' font-size='34' font-family='Arial,sans-serif' font-weight='bold' fill='white' text-anchor='middle'%3E11%3C/text%3E%3C/svg%3E" />
+
+  <!--
+    ============================================================
+    DASHBOARD PANTALLA GIGANTE  (dashboard.html)
+    ============================================================
+    Vista para proyectar en la netbook / TV del stand. Se actualiza
+    en vivo con cada test que completan los alumnos (js/realtime.js
+    sobre ntfy.sh, multi-dispositivo).
+
+    Acceso restringido: pide PIN 'admin11' (js/dashboard-auth.js).
+    Sin PIN correcto → redirige a index.html.
+
+    Dos vistas (conmutador en la barra):
+      · General   -> Podio + barras multicolor + dona por área
+      · Detallada -> las 18 tecnicaturas ordenadas por votos + %
+
+    Identidad: paleta oficial + toggle claro/oscuro (js/theme.js).
+    Gráficos con Chart.js (CDN).
+    ============================================================
+  -->
+
+  <!-- Bloqueo temprano: oculta el contenido hasta validar el PIN -->
+  <script>
+    try {
+      if (localStorage.getItem('feria_ies11_dash_ok') !== '1') {
+        document.documentElement.dataset.dashLocked = '1';
+      }
+    } catch (e) { document.documentElement.dataset.dashLocked = '1'; }
+  </script>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="js/theme.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- Tipografía institucional -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" />
+
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body class="dash-body h-screen overflow-hidden antialiased flex flex-col">
+
+  <!-- ====================================================== -->
+  <!-- PANTALLA DE ACCESO (PIN)                                -->
+  <!-- ====================================================== -->
+  <div id="gate-dashboard" class="gate">
+    <form id="gate-form" class="gate__caja">
+      <div class="gate__escudo">11</div>
+      <h1 class="gate__titulo">Panel del stand</h1>
+      <p class="gate__texto">Esta vista es sólo para la netbook del stand. Ingresá la clave de acceso.</p>
+      <input id="gate-pin" class="campo" type="password" inputmode="text"
+             autocomplete="off" placeholder="Clave de acceso" aria-label="Clave de acceso" />
+      <p id="gate-error" class="form-error" hidden></p>
+      <button type="submit" class="btn btn--primario w-full">Ingresar</button>
+      <a class="gate__volver" href="index.html">← Volver al Test Vocacional</a>
+    </form>
+  </div>
+
+  <!-- ====================================================== -->
+  <!-- ENCABEZADO INSTITUCIONAL                                -->
+  <!-- ====================================================== -->
+  <header class="app-header flex-none">
+    <div class="app-header__inst">
+      <img src="img/logo-ies11.png" alt="Escudo IES N.° 11" class="app-header__escudo"
+           onerror="this.style.display='none';this.nextElementSibling.hidden=false" />
+      <span class="escudo-fb" hidden>11</span>
+      <span class="app-header__inst-text">
+        <strong>IES N.° 11</strong>
+        <small>Tecnicatura Superior Ciencia de Datos e IA</small>
+      </span>
+    </div>
+
+    <div class="app-header__title">
+      <h1>Expo Educativa 2026</h1>
+      <p>Test Vocacional · en vivo</p>
+      <div class="mt-1 flex items-center justify-center gap-3">
+        <span id="estado-conexion" class="hidden rounded-full px-3 py-0.5 text-xs font-semibold">
+          Sin conexión con el servidor
+        </span>
+        <span id="reloj" class="font-mono text-sm tabular-nums opacity-80"></span>
+      </div>
+    </div>
+
+    <div class="app-header__team">
+      <button type="button" class="tema-toggle" data-toggle-tema aria-label="Cambiar modo claro / oscuro">
+        <span class="icono-luna" aria-hidden="true">🌙</span>
+        <span class="icono-sol" aria-hidden="true">☀️</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ====================================================== -->
+  <!-- CONTENIDO                                               -->
+  <!-- ====================================================== -->
+  <main class="flex flex-1 min-h-0 flex-col gap-4 p-6">
+
+    <!-- Toolbar: filtro por jornada + conmutador de vista -->
+    <div class="dash-toolbar flex-none">
+      <label for="filtro-jornada" class="dash-rotulo">Jornada</label>
+      <select id="filtro-jornada" class="campo dash-toolbar__select">
+        <option value="global">Global (Toda la Expo)</option>
+        <option value="d1">Día 1</option>
+        <option value="d2">Día 2</option>
+        <option value="d3">Día 3</option>
+      </select>
+
+      <div class="dash-vista" role="tablist" aria-label="Vista del panel">
+        <button type="button" class="dash-vista__btn is-activa" data-vista="general" role="tab" aria-selected="true">
+          Vista General
+        </button>
+        <button type="button" class="dash-vista__btn" data-vista="detallada" role="tab" aria-selected="false">
+          Vista Detallada (18 Tecnicaturas)
+        </button>
+      </div>
+    </div>
+
+    <!-- ------- VISTA GENERAL (Podio + Áreas) ------- -->
+    <div id="vista-general" class="grid flex-1 min-h-0 grid-cols-12 gap-6">
+
+      <section class="col-span-3 flex min-h-0 flex-col gap-5">
+        <div class="dash-kpi p-6">
+          <p id="contador-participantes" class="text-8xl font-black leading-none">0</p>
+          <p class="mt-1 text-sm font-bold uppercase tracking-wide text-white/80">
+            estudiantes ya descubrieron<br />su vocación hoy
+          </p>
+        </div>
+
+        <div class="dash-panel flex-none p-5">
+          <p class="dash-rotulo mb-3">🏆 Podio · Top 3 tecnicaturas</p>
+          <div id="podio" class="space-y-2"></div>
+        </div>
+
+        <div class="dash-panel flex min-h-0 flex-1 flex-col p-5">
+          <p class="dash-rotulo mb-3">Últimos participantes</p>
+          <ul id="feed-actividad" class="min-h-0 flex-1 space-y-2 overflow-hidden text-sm"></ul>
+        </div>
+      </section>
+
+      <section class="col-span-6 dash-panel flex min-h-0 flex-col p-5">
+        <p class="dash-rotulo mb-3">Tecnicaturas · apariciones en el Top 3 (color por área)</p>
+        <div class="relative min-h-0 flex-1">
+          <canvas id="grafico-carreras"></canvas>
+        </div>
+      </section>
+
+      <section class="col-span-3 dash-panel flex min-h-0 flex-col p-5">
+        <p class="dash-rotulo mb-3">Perfil dominante por área</p>
+        <div class="relative min-h-0 flex-1">
+          <canvas id="grafico-areas"></canvas>
+        </div>
+        <ul id="leyenda-areas" class="mt-4 space-y-1 text-xs"></ul>
+      </section>
+    </div>
+
+    <!-- ------- VISTA DETALLADA (18 Tecnicaturas) ------- -->
+    <div id="vista-detallada" class="dash-panel flex min-h-0 flex-1 flex-col p-6" hidden>
+      <div class="flex items-baseline justify-between">
+        <p class="dash-rotulo">Desglose por tecnicatura · más votada → menos votada</p>
+        <p class="text-sm texto-suave">
+          Total participantes: <span id="detalle-total" class="font-bold">0</span>
+        </p>
+      </div>
+      <div id="detalle-lista" class="mt-4 min-h-0 flex-1 space-y-2 overflow-y-auto pr-2"></div>
+    </div>
+  </main>
+
+  <!-- Pie institucional compacto -->
+  <footer class="app-footer app-footer--barra flex-none">
+    <div class="app-footer__row">
+      <a href="https://maps.app.goo.gl/infU3zgHUbP6jBt77" target="_blank" rel="noopener noreferrer">
+        📍 Gral. Alvear 1145, Y4600 San Salvador de Jujuy
+      </a>
+      <a href="tel:+543885766624">📞 0388 576-6624</a>
+      <a href="https://www.facebook.com/profile.php?id=100066551990089" target="_blank" rel="noopener noreferrer">
+        📘 Facebook IES N.° 11
+      </a>
+    </div>
+
+    <div class="app-footer__grupo">
+      <button id="btn-exportar-csv" type="button" class="btn btn--csv">🔒 Exportar Dataset CSV</button>
+      <div class="app-footer__dev">
+        <img src="img/logo-TIT.png" alt="Tech &amp; Innovation Team" class="app-footer__tit" />
+        <span>Desarrollado por Tech &amp; Innovation Team — IES N.° 11</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Notificaciones flotantes -->
+  <div id="toasts" class="pointer-events-none fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3"></div>
+
+  <!-- ====================================================== -->
+  <!-- SCRIPTS                                                 -->
+  <!-- ====================================================== -->
+  <script src="js/questions.js"></script>
+  <script src="js/realtime.js"></script>
+  <script src="js/dashboard-auth.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+IMÁGENES DEL PROYECTO
+=====================
+
+logo-TIT.png    ✅ presente — logo del Tech & Innovation Team.
+logo-ies11.png  ⛔ FALTA — escudo oficial del IES N.° 11.
+
+Sobre el escudo del IES N.° 11
+------------------------------
+No vino adjunto en el chat, así que todavía no está en la carpeta.
+Mientras falte, el encabezado muestra un círculo con "11" como
+marcador de posición (fallback automático por el atributo onerror
+de la etiqueta <img> en index.html y dashboard.html).
+
+Para colocarlo:
+  1) Guardá el archivo del escudo como:  img/logo-ies11.png
+     (PNG con fondo transparente, idealmente cuadrado, >= 128 px).
+  2) Recargá la página. El marcador "11" desaparece solo.
+
+No hace falta tocar el HTML ni el CSS.
