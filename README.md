@@ -121,6 +121,10 @@ Todo lo demás es 100% estático: **no hay build ni backend**.
 
 Estructura modular por tarjetas — **todo reacciona al filtro por Jornada** (Global / Día 1-3):
 
+- **Tarjeta QR de acceso** (`#dash-qr`): *"¡Escaneá y realizá tu Test!"* + QR generado en vivo con
+  `qrcodejs` (CDN) apuntando a `URL_TEST` (`js/dashboard.js`, hoy `https://test-vocacional-ies11.netlify.app`)
+  + la URL escrita debajo. Marco blanco fijo (lee bien en cualquier tema). En pantallas grandes es un
+  riel fijo a la izquierda (el `main` reserva ese espacio); en pantallas chicas va en el flujo, arriba.
 - **Fila KPI** (siempre visible): *Encuestados totales* · *Edad promedio* (calculada sobre quienes
   indicaron su edad) · *Carrera más elegida* (la N.° 1 del ranking, con el color de su área).
 - **Vista General**:
@@ -211,8 +215,10 @@ Probar la sincronización real: abrir el dashboard en el celular y el test en ot
 ## Despliegue a un servidor público
 
 El sitio es estático: se sube tal cual, sin compilar. **Antes de publicar**:
-1. Poné la URL real en `index.html` (`<link rel="canonical">` y `og:*` / `twitter:*` — hoy tienen el
-   placeholder `https://expo-educativa-ies11.vercel.app/`).
+1. Definí **la misma URL pública** en dos lugares: los `<meta>` de `index.html`
+   (`<link rel="canonical">` + `og:*` / `twitter:*`, hoy `https://expo-educativa-ies11.vercel.app/`) y
+   `URL_TEST` en `js/dashboard.js` (el destino del QR, hoy `https://test-vocacional-ies11.netlify.app`).
+   El QR de folletos/banners (`tools/qr.html`) también tiene que apuntar a esa URL.
 2. Cambiá `SUFIJO_DEFECTO` en `js/realtime.js` por uno nuevo y privado, así arrancás con el canal
    limpio. No agregues `Content-Security-Policy`: bloquearía las conexiones a `ntfy.sh`.
 3. Confirmá el PIN del dashboard en `js/dashboard-auth.js` (por defecto `admin11`).

@@ -30,6 +30,7 @@
   const TOAST_MS = 5000;
   const PIN = 'admin11';                 // CSV + limpiar datos
   const CLAVE_EXPORT = PIN;
+  const URL_TEST = 'https://test-vocacional-ies11.netlify.app'; // destino del QR
   const COLORES_POS = ['#EAB308', '#94A3B8', '#C2703D']; // 1.ª / 2.ª / 3.ª opción
 
   // ----------------------------------------------------------
@@ -723,6 +724,32 @@
   }
 
   // ==========================================================
+  // Código QR de acceso al test
+  // ==========================================================
+  function initQR() {
+    const cont = document.getElementById('dash-qr-codigo');
+    if (!cont) return;
+    if (typeof window.QRCode !== 'function') {
+      // Sin la librería (sin internet): mostrar sólo la URL, sin romper nada.
+      cont.innerHTML = '<span class="dash-qr__fallback">Abrí el link de abajo 👇</span>';
+      return;
+    }
+    cont.innerHTML = '';
+    /* global QRCode */
+    new QRCode(cont, {
+      text: URL_TEST,
+      width: 190,
+      height: 190,
+      colorDark: '#02447B',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M, // ~15% de tolerancia, buen equilibrio a distancia
+    });
+    // qrcodejs alterna entre <canvas> y <img>; el CSS dimensiona ambos.
+    const img = cont.querySelector('img');
+    if (img) img.alt = 'Código QR para hacer el Test Vocacional';
+  }
+
+  // ==========================================================
   // Reloj + estado de conexión
   // ==========================================================
   function iniciarReloj() {
@@ -784,6 +811,7 @@
 
     iniciarReloj();
     chequearConexion();
+    initQR();
 
     if (dom.filtroJornada) {
       dom.filtroJornada.addEventListener('change', () => {

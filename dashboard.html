@@ -41,6 +41,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="js/theme.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -104,6 +105,18 @@
   <!-- CONTENIDO                                               -->
   <!-- ====================================================== -->
   <main class="mx-auto w-full max-w-[1700px] space-y-6 p-6">
+
+    <!-- ================= TARJETA QR DE ACCESO =================
+         Flotante en pantallas grandes (stand) · en el flujo en pantallas chicas -->
+    <aside id="dash-qr" class="dash-qr" aria-label="Código QR para hacer el test">
+      <p class="dash-qr__titulo">¡Escaneá y realizá tu Test!</p>
+      <p class="dash-qr__sub">Ingresá desde tu celular</p>
+      <div class="dash-qr__marco">
+        <div id="dash-qr-codigo" aria-hidden="true"></div>
+      </div>
+      <a class="dash-qr__url" href="https://test-vocacional-ies11.netlify.app"
+         target="_blank" rel="noopener">test-vocacional-ies11.netlify.app</a>
+    </aside>
 
     <!-- Barra de control -->
     <div class="dash-toolbar">

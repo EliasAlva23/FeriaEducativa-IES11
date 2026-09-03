@@ -784,6 +784,87 @@ a { color: var(--highlight); }
 }
 
 /* -----------------------------------------------------------
+   Tarjeta QR de acceso al test (pantalla gigante)
+   -----------------------------------------------------------
+   En pantallas grandes se ancla como riel izquierdo fijo (main
+   reserva ese espacio con padding-left, así no tapa los gráficos).
+   En pantallas medianas/chicas va en el flujo, arriba de todo.
+   ----------------------------------------------------------- */
+.dash-qr {
+  position: fixed;
+  left: 1.5rem;
+  top: 7rem;
+  z-index: 45;
+  width: 258px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.35rem;
+  padding: 1.1rem 1rem 0.9rem;
+  border-radius: var(--radio);
+  background: var(--bg-elevado);
+  -webkit-backdrop-filter: var(--blur);
+  backdrop-filter: var(--blur);
+  border: 1px solid var(--borde);
+  box-shadow: var(--glow-fuerte);
+}
+@media (min-width: 1280px) {
+  .dash-body > main { padding-left: 310px; }
+}
+.dash-qr__titulo {
+  font-size: 1.05rem;
+  font-weight: 800;
+  line-height: 1.2;
+  color: var(--texto);
+}
+.dash-qr__sub { font-size: 0.82rem; font-weight: 600; color: var(--texto-suave); }
+
+/* Marco SIEMPRE claro para que la cámara lea bien en cualquier tema */
+.dash-qr__marco {
+  margin-top: 0.25rem;
+  padding: 0.7rem;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 0 24px -6px rgba(52, 111, 176, 0.55);
+  line-height: 0;
+}
+.dash-qr__marco img,
+.dash-qr__marco canvas {
+  display: block;
+  width: 168px;
+  height: 168px;   /* >= 150px para lectura cómoda */
+}
+.dash-qr__fallback {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 168px; height: 168px;
+  font-size: 0.85rem; font-weight: 700; color: var(--oficial-marino);
+  line-height: 1.3;
+}
+
+.dash-qr__url {
+  margin-top: 0.15rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--highlight) !important;
+  text-decoration: none;
+  word-break: break-all;
+}
+.dash-qr__url:hover { text-decoration: underline; }
+
+/* En pantallas medianas/chicas: la tarjeta va en el flujo, arriba de todo */
+@media (max-width: 1279px) {
+  .dash-qr {
+    position: static;
+    width: 100%;
+    max-width: 380px;
+    margin: 0 auto;
+    box-shadow: var(--glow);
+  }
+}
+
+/* -----------------------------------------------------------
    13. Reja de acceso al dashboard (PIN)
    ----------------------------------------------------------- */
 #gate-dashboard { display: none; }
