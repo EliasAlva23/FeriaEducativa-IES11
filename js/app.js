@@ -418,7 +418,7 @@
       </div>
       <div class="resultado-cierre mt-4">
         <p class="resultado-cierre__frase">
-          ¡Espero que puedas decidir cuál de estas carreras hacer o ya te veas estudiando!
+          ¡Muchos éxitos en la elección de tu futura carrera!
         </p>
         <p class="resultado-cierre__cta">¡Te esperamos en el Instituto!</p>
       </div>`;
