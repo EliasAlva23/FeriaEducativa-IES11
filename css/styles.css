@@ -564,7 +564,33 @@ a { color: var(--highlight); }
    ----------------------------------------------------------- */
 .dash-body { color: var(--texto); }
 
-/* Toolbar (filtro por jornada + conmutador de vista) */
+/* -----------------------------------------------------------
+   Layout por filas (maqueta 2 columnas):
+   .dash-fila   -> fila de 2 columnas (principal ancha + lateral).
+   .dash-col    -> pila vertical dentro de una columna.
+   .grid-2col   -> grilla simétrica de 2 columnas (filas inferiores).
+   .grid-kpi    -> las 3 tarjetas KPI en fila, de igual ancho.
+   Móvil: todo en 1 columna. Nunca genera scroll horizontal de página.
+   ----------------------------------------------------------- */
+.dash-fila { display: grid; gap: 1.5rem; grid-template-columns: 1fr; align-items: start; }
+.dash-col { display: flex; flex-direction: column; gap: 1.25rem; min-width: 0; }
+.grid-2col { display: grid; gap: 1.5rem; grid-template-columns: 1fr; }
+.grid-kpi { display: grid; gap: 1.25rem; grid-template-columns: 1fr; }
+/* Los ítems de grilla deben poder achicarse por debajo de su contenido
+   (si no, un gráfico ancho con min-width ensancha la columna y la página). */
+.dash-fila > *, .grid-2col > *, .grid-kpi > * { min-width: 0; }
+
+@media (min-width: 640px) {
+  .grid-kpi { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (min-width: 768px) {
+  .grid-2col { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 1024px) {
+  .dash-fila { grid-template-columns: minmax(0, 1.7fr) minmax(300px, 1fr); }
+}
+
+/* Toolbar (filtro por jornada) — alineado a la izquierda */
 .dash-toolbar {
   display: flex; align-items: center; flex-wrap: wrap; gap: 0.75rem;
   padding: 0.6rem 0.9rem;
@@ -688,30 +714,13 @@ a { color: var(--highlight); }
   border-left: 2px solid var(--borde); padding-left: 0.6rem; margin-left: 0.25rem;
 }
 
-/* Conmutador de vista (General / Detallada) */
-.dash-vista {
-  display: inline-flex; gap: 0.25rem; padding: 0.25rem;
-  border-radius: 9999px; border: 1px solid var(--borde);
-  background: var(--bg-suave); margin-left: auto;
-}
-.dash-vista__btn {
-  border: 0; cursor: pointer; font-family: var(--fuente);
-  font-size: 0.8rem; font-weight: 700; color: var(--texto-suave);
-  padding: 0.42rem 0.9rem; border-radius: 9999px; background: transparent;
-  transition: color var(--transicion), background var(--transicion);
-}
-.dash-vista__btn.is-activa {
-  color: #fff; background-image: var(--grad-acento);
-  box-shadow: 0 8px 20px -8px rgba(123, 121, 177, 0.6);
-}
-
 /* Subtítulo explicativo bajo el rótulo de cada panel */
 .panel-sub { color: var(--texto-suave); font-size: 0.82rem; line-height: 1.35; margin-top: 0.25rem; }
 
 /* Scroll horizontal interno SÓLO para tablas / gráficos de barras horizontales.
    El hijo reserva un ancho mínimo; el padre .dash-scroll-x hace el scroll sin
    ensanchar la página. */
-.dash-scroll-x { width: 100%; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; }
+.dash-scroll-x { width: 100%; min-width: 0; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; }
 
 /* Contenedor de canvas con alto fijo (para maintainAspectRatio:false). */
 .dash-canvas-wrap { position: relative; width: 100%; height: 18rem; }
@@ -810,6 +819,14 @@ a { color: var(--highlight); }
   gap: 1.25rem;
   padding: 1rem 1.25rem;
 }
+/* Variante lateral (columna derecha de la fila superior): QR arriba,
+   texto debajo y todo centrado — se lee cómodo en una columna angosta. */
+.dash-qr--lateral {
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.dash-qr--lateral .dash-qr__marco { margin-inline: auto; }
 .dash-qr__marco {
   flex: none;
   padding: 0.6rem;

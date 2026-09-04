@@ -224,24 +224,8 @@
     refrescarFeed();
     refrescarPodio();
     refrescarGraficos(animar);
-    refrescarVistaDetallada();
+    refrescarDesglose();
     refrescarDemografia();
-  }
-
-  // ==========================================================
-  // Conmutador de vista
-  // ==========================================================
-  function setVista(v) {
-    const detallada = v === 'detallada';
-    if (dom.vistaGeneral) dom.vistaGeneral.hidden = detallada;
-    if (dom.vistaDetallada) dom.vistaDetallada.hidden = !detallada;
-    (dom.btnsVista || []).forEach((b) => {
-      const activa = b.dataset.vista === v;
-      b.classList.toggle('is-activa', activa);
-      b.setAttribute('aria-selected', String(activa));
-    });
-    // Los canvas ocultos no se miden bien: forzar re-layout al mostrarlos
-    window.setTimeout(() => window.dispatchEvent(new Event('resize')), 60);
   }
 
   // ==========================================================
@@ -552,9 +536,9 @@
   }
 
   // ==========================================================
-  // Vista Detallada: desglose de las 18
+  // Desglose de las 18 tecnicaturas
   // ==========================================================
-  function refrescarVistaDetallada() {
+  function refrescarDesglose() {
     if (!dom.detalleLista) return;
     const total = agregado.total || 0;
     if (dom.detalleTotal) dom.detalleTotal.textContent = String(total);
@@ -804,15 +788,12 @@
     dom.filtroJornada = document.getElementById('filtro-jornada');
     dom.btnCsv = document.getElementById('btn-exportar-csv');
     dom.btnLimpiar = document.getElementById('btn-limpiar-datos');
-    dom.vistaGeneral = document.getElementById('vista-general');
-    dom.vistaDetallada = document.getElementById('vista-detallada');
     dom.detalleLista = document.getElementById('detalle-lista');
     dom.detalleTotal = document.getElementById('detalle-total');
     dom.demoSituacion = document.getElementById('demo-situacion');
     dom.demoLocalidad = document.getElementById('demo-localidad');
     dom.demoGenero = document.getElementById('demo-genero');
     dom.demoEdad = document.getElementById('demo-edad');
-    dom.btnsVista = Array.from(document.querySelectorAll('[data-vista]'));
 
     if (dom.kpiIcoTotal) dom.kpiIcoTotal.innerHTML = iconoSVG('personas');
     if (dom.kpiIcoEdad) dom.kpiIcoEdad.innerHTML = iconoSVG('grafico');
@@ -828,7 +809,6 @@
         recomputar(true);
       });
     }
-    dom.btnsVista.forEach((b) => b.addEventListener('click', () => setVista(b.dataset.vista)));
     if (dom.btnCsv) dom.btnCsv.addEventListener('click', exportarCSV);
     if (dom.btnLimpiar) dom.btnLimpiar.addEventListener('click', limpiarDatosPrueba);
     document.addEventListener('tema:cambio', aplicarTemaAGraficos);

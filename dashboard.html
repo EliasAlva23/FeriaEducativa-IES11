@@ -57,8 +57,11 @@
     /* Contenedor, grillas y tarjetas (respaldo si Tailwind / styles.css no aplican) */
     .dash-contenedor { width: 100%; max-width: 80rem; margin-inline: auto; padding: 1.5rem 1rem 3rem; }
     .dash-contenedor > * + * { margin-top: 1.5rem; }
-    .grid-kpi, .grid-panel { display: grid; gap: 1.5rem; grid-template-columns: 1fr; }
-    .grid-panel { grid-auto-flow: dense; }
+    .dash-fila, .grid-2col, .grid-kpi { display: grid; gap: 1.5rem; grid-template-columns: 1fr; }
+    .dash-fila { align-items: start; }
+    .dash-fila > *, .grid-2col > *, .grid-kpi > * { min-width: 0; }
+    .dash-col { display: flex; flex-direction: column; gap: 1.25rem; min-width: 0; }
+    .dash-scroll-x { min-width: 0; overflow-x: auto; }
     .dash-panel, .kpi-card, .dash-toolbar {
       background: rgba(255,255,255,.78); border: 1px solid rgba(120,120,180,.28);
       border-radius: 18px; padding: 1.25rem;
@@ -67,18 +70,14 @@
     .kpi-card__icono { flex: none; width: 3rem; height: 3rem; display: inline-flex;
       align-items: center; justify-content: center; border-radius: 14px; background: rgba(123,121,177,.15); }
     .dash-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; }
-    @media (min-width: 768px) {
-      .grid-kpi { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-      .grid-panel { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .panel-ancho { grid-column: span 2; }
-    }
-    @media (min-width: 1024px) {
-      .grid-panel { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    }
-    .panel-full { grid-column: 1 / -1; }
+    @media (min-width: 640px)  { .grid-kpi { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    @media (min-width: 768px)  { .grid-2col { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (min-width: 1024px) { .dash-fila { grid-template-columns: minmax(0, 1.7fr) minmax(300px, 1fr); } }
     /* QR: marco blanco contenido y código acotado aunque falle styles.css */
     .dash-qr { display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap; }
+    .dash-qr--lateral { flex-direction: column; text-align: center; }
     .dash-qr__marco { flex: none; padding: .5rem; background: #fff; border-radius: 12px; line-height: 0; }
+    .dash-qr--lateral .dash-qr__marco { margin-inline: auto; }
     .dash-qr__marco > div { width: 156px; height: 156px; }
     .dash-qr__marco img, .dash-qr__marco canvas { width: 156px !important; height: 156px !important; display: block; }
     .dash-qr__texto { min-width: 0; }
@@ -87,14 +86,16 @@
 
   <script>
     /* Desbloqueo temprano (antes del primer paint) SÓLO si hay sesión válida
-       en localStorage o sessionStorage. Ante cualquier error: queda bloqueado. */
+       en sessionStorage: la clave se vuelve a pedir al cerrar / recargar de cero
+       el navegador. Ante cualquier error: queda bloqueado. */
     try {
-      var _ok = localStorage.getItem('feria_ies11_dash_ok') === '1'
-             || sessionStorage.getItem('feria_ies11_dash_ok') === '1';
-      if (_ok) {
+      if (sessionStorage.getItem('feria_ies11_dash_ok') === '1') {
         document.documentElement.removeAttribute('data-dash-locked');
         document.documentElement.setAttribute('data-dash-ok', '1');
       }
+      /* Persistencia vieja (ya no se usa): quitamos el flag de localStorage
+         — es sólo la marca de sesión del panel, NO datos de encuestas. */
+      localStorage.removeItem('feria_ies11_dash_ok');
     } catch (e) { /* se mantiene bloqueado */ }
   </script>
 
@@ -108,7 +109,7 @@
   <link rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" />
 
-  <link rel="stylesheet" href="css/styles.css?v=3" />
+  <link rel="stylesheet" href="css/styles.css?v=4" />
 </head>
 <body class="dash-body min-h-screen antialiased">
 
@@ -166,73 +167,73 @@
   <!-- ====================================================== -->
   <main id="dash-main" class="dash-contenedor" hidden>
 
-    <!-- ---------- Tarjeta QR de acceso ---------- -->
-    <section class="dash-panel dash-qr" aria-label="Código QR para hacer el test">
-      <div class="dash-qr__marco">
-        <div id="dash-qr-codigo" aria-hidden="true"></div>
-      </div>
-      <div class="dash-qr__texto">
-        <p class="dash-qr__titulo">¡Escaneá y realizá tu Test!</p>
-        <p class="dash-qr__sub">Ingresá desde tu celular</p>
-        <a class="dash-qr__url" href="https://test-vocacional-ies11.netlify.app"
-           target="_blank" rel="noopener">test-vocacional-ies11.netlify.app</a>
-      </div>
-    </section>
+    <!-- ================================================== -->
+    <!-- FILA SUPERIOR · Columna principal (Jornada + KPIs) -->
+    <!--               · Columna lateral (Código QR)        -->
+    <!-- ================================================== -->
+    <div class="dash-fila">
+      <div class="dash-col">
+        <!-- Selector de jornada, alineado a la izquierda -->
+        <div class="dash-toolbar">
+          <label for="filtro-jornada" class="dash-rotulo">Jornada</label>
+          <select id="filtro-jornada" class="campo dash-toolbar__select">
+            <option value="global">Global (Toda la Expo)</option>
+            <option value="d1">Día 1</option>
+            <option value="d2">Día 2</option>
+            <option value="d3">Día 3</option>
+          </select>
+        </div>
 
-    <!-- ---------- Barra de control ---------- -->
-    <div class="dash-toolbar">
-      <label for="filtro-jornada" class="dash-rotulo">Jornada</label>
-      <select id="filtro-jornada" class="campo dash-toolbar__select">
-        <option value="global">Global (Toda la Expo)</option>
-        <option value="d1">Día 1</option>
-        <option value="d2">Día 2</option>
-        <option value="d3">Día 3</option>
-      </select>
+        <!-- 3 tarjetas KPI de igual ancho, en fila -->
+        <section class="grid-kpi">
+          <article class="kpi-card">
+            <span class="kpi-card__icono" id="kpi-ico-total" aria-hidden="true"></span>
+            <div class="min-w-0">
+              <p class="kpi-card__valor" id="contador-participantes">0</p>
+              <p class="kpi-card__label">Encuestados totales</p>
+              <p class="kpi-card__sub">Tests completados en la jornada seleccionada</p>
+            </div>
+          </article>
 
-      <div class="dash-vista" role="tablist" aria-label="Vista del panel">
-        <button type="button" class="dash-vista__btn is-activa" data-vista="general" role="tab" aria-selected="true">
-          Vista General
-        </button>
-        <button type="button" class="dash-vista__btn" data-vista="detallada" role="tab" aria-selected="false">
-          Vista Detallada
-        </button>
+          <article class="kpi-card">
+            <span class="kpi-card__icono" id="kpi-ico-edad" aria-hidden="true"></span>
+            <div class="min-w-0">
+              <p class="kpi-card__valor" id="kpi-edad">—</p>
+              <p class="kpi-card__label">Edad promedio</p>
+              <p class="kpi-card__sub">Promedio calculado sobre quienes indicaron su edad</p>
+            </div>
+          </article>
+
+          <article class="kpi-card" id="kpi-carrera-card">
+            <span class="kpi-card__icono" id="kpi-ico-carrera" aria-hidden="true"></span>
+            <div class="min-w-0">
+              <p class="kpi-card__valor kpi-card__valor--sm" id="kpi-carrera">—</p>
+              <p class="kpi-card__label">Carrera más elegida</p>
+              <p class="kpi-card__sub" id="kpi-carrera-sub">La N.° 1 del ranking de afinidades</p>
+            </div>
+          </article>
+        </section>
       </div>
+
+      <!-- Columna lateral: Código QR de acceso al test -->
+      <section class="dash-panel dash-qr dash-qr--lateral" aria-label="Código QR para hacer el test">
+        <div class="dash-qr__marco">
+          <div id="dash-qr-codigo" aria-hidden="true"></div>
+        </div>
+        <div class="dash-qr__texto">
+          <p class="dash-qr__titulo">¡Escaneá y realizá tu Test!</p>
+          <p class="dash-qr__sub">Ingresá desde tu celular</p>
+          <a class="dash-qr__url" href="https://test-vocacional-ies11.netlify.app"
+             target="_blank" rel="noopener">test-vocacional-ies11.netlify.app</a>
+        </div>
+      </section>
     </div>
 
-    <!-- ---------- Fila KPI ---------- -->
-    <section class="grid-kpi">
-      <article class="kpi-card">
-        <span class="kpi-card__icono" id="kpi-ico-total" aria-hidden="true"></span>
-        <div class="min-w-0">
-          <p class="kpi-card__valor" id="contador-participantes">0</p>
-          <p class="kpi-card__label">Encuestados totales</p>
-          <p class="kpi-card__sub">Tests completados en la jornada seleccionada</p>
-        </div>
-      </article>
-
-      <article class="kpi-card">
-        <span class="kpi-card__icono" id="kpi-ico-edad" aria-hidden="true"></span>
-        <div class="min-w-0">
-          <p class="kpi-card__valor" id="kpi-edad">—</p>
-          <p class="kpi-card__label">Edad promedio</p>
-          <p class="kpi-card__sub">Promedio calculado sobre quienes indicaron su edad</p>
-        </div>
-      </article>
-
-      <article class="kpi-card" id="kpi-carrera-card">
-        <span class="kpi-card__icono" id="kpi-ico-carrera" aria-hidden="true"></span>
-        <div class="min-w-0">
-          <p class="kpi-card__valor kpi-card__valor--sm" id="kpi-carrera">—</p>
-          <p class="kpi-card__label">Carrera más elegida</p>
-          <p class="kpi-card__sub" id="kpi-carrera-sub">La N.° 1 del ranking de afinidades</p>
-        </div>
-      </article>
-    </section>
-
-    <!-- ---------- Vista General ---------- -->
-    <div id="vista-general" class="grid-panel">
-
-      <section class="dash-panel panel-ancho">
+    <!-- ================================================== -->
+    <!-- SEGUNDA FILA · Ranking (principal) | Áreas (lateral)-->
+    <!-- ================================================== -->
+    <div class="dash-fila">
+      <section class="dash-panel">
         <p class="dash-rotulo">Ranking de las 18 tecnicaturas</p>
         <p class="panel-sub">Apariciones totales en el Top 3, ordenadas de mayor a menor · color por área</p>
         <div class="dash-scroll-x">
@@ -250,8 +251,34 @@
         </div>
         <ul id="leyenda-areas" class="mt-4 space-y-1 text-sm"></ul>
       </section>
+    </div>
 
-      <section class="dash-panel panel-ancho">
+    <!-- ================================================== -->
+    <!-- FILAS INFERIORES · Grilla simétrica de 2 columnas   -->
+    <!-- ================================================== -->
+    <div class="grid-2col">
+      <section class="dash-panel">
+        <p class="dash-rotulo">Situación educativa</p>
+        <p class="panel-sub">Contexto académico de quienes participaron</p>
+        <div id="demo-situacion" class="demo-lista mt-3"></div>
+      </section>
+
+      <section class="dash-panel">
+        <p class="dash-rotulo">Origen · localidad</p>
+        <p class="panel-sub">Procedencia de quienes participaron (localidades más frecuentes)</p>
+        <div id="demo-localidad" class="demo-lista mt-3"></div>
+      </section>
+
+      <section class="dash-panel">
+        <p class="dash-rotulo">Por género y edad</p>
+        <p class="panel-sub">Distribución porcentual por género y por rango etario</p>
+        <p class="demo-titulo mt-3">Género</p>
+        <div id="demo-genero" class="demo-lista mt-1"></div>
+        <p class="demo-titulo mt-4">Rango etario</p>
+        <div id="demo-edad" class="demo-lista mt-1"></div>
+      </section>
+
+      <section class="dash-panel">
         <p class="dash-rotulo">Presencia en las 3 afinidades principales</p>
         <p class="panel-sub">Cuántas veces cada carrera fue elegida como 1.ª, 2.ª o 3.ª opción</p>
         <div class="dash-scroll-x">
@@ -260,61 +287,39 @@
           </div>
         </div>
       </section>
+    </div>
 
+    <!-- ================================================== -->
+    <!-- COMPLEMENTOS · Podio + Feed  ·  Desglose de las 18  -->
+    <!-- ================================================== -->
+    <div class="grid-2col">
       <section class="dash-panel">
         <p class="dash-rotulo">🏆 Podio · Top 3 tecnicaturas</p>
         <p class="panel-sub">Las 3 carreras con más apariciones en el Top 3</p>
         <div id="podio" class="mt-3 space-y-2"></div>
       </section>
 
-      <section class="dash-panel panel-full">
+      <section class="dash-panel">
         <p class="dash-rotulo">Últimos participantes</p>
         <p class="panel-sub">Actividad reciente en tiempo real</p>
-        <ul id="feed-actividad" class="mt-3 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2 text-sm"></ul>
+        <ul id="feed-actividad" class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm"></ul>
       </section>
     </div>
 
-    <!-- ---------- Vista Detallada ---------- -->
-    <div id="vista-detallada" hidden>
-
-      <section class="dash-panel">
-        <div class="flex flex-wrap items-baseline justify-between gap-2">
-          <div>
-            <p class="dash-rotulo">Desglose por tecnicatura</p>
-            <p class="panel-sub">Las 18 carreras de más a menos votada · votos y % sobre el total de participantes</p>
-          </div>
-          <p class="text-sm texto-suave">
-            Total participantes: <span id="detalle-total" class="font-bold">0</span>
-          </p>
+    <section class="dash-panel">
+      <div class="flex flex-wrap items-baseline justify-between gap-2">
+        <div>
+          <p class="dash-rotulo">Desglose por tecnicatura</p>
+          <p class="panel-sub">Las 18 carreras de más a menos votada · votos y % sobre el total de participantes</p>
         </div>
-        <div class="dash-scroll-x mt-4">
-          <div id="detalle-lista" class="space-y-2"></div>
-        </div>
-      </section>
-
-      <div class="grid-panel mt-6">
-        <section class="dash-panel">
-          <p class="dash-rotulo">Situación educativa</p>
-          <p class="panel-sub">Contexto académico de quienes participaron</p>
-          <div id="demo-situacion" class="demo-lista mt-3"></div>
-        </section>
-
-        <section class="dash-panel">
-          <p class="dash-rotulo">Origen · localidad</p>
-          <p class="panel-sub">Procedencia de quienes participaron (localidades más frecuentes)</p>
-          <div id="demo-localidad" class="demo-lista mt-3"></div>
-        </section>
-
-        <section class="dash-panel">
-          <p class="dash-rotulo">Por género y edad</p>
-          <p class="panel-sub">Distribución porcentual por género y por rango etario</p>
-          <p class="demo-titulo mt-3">Género</p>
-          <div id="demo-genero" class="demo-lista mt-1"></div>
-          <p class="demo-titulo mt-4">Rango etario</p>
-          <div id="demo-edad" class="demo-lista mt-1"></div>
-        </section>
+        <p class="text-sm texto-suave">
+          Total participantes: <span id="detalle-total" class="font-bold">0</span>
+        </p>
       </div>
-    </div>
+      <div class="dash-scroll-x mt-4">
+        <div id="detalle-lista" class="space-y-2"></div>
+      </div>
+    </section>
   </main>
 
   <!-- ====================================================== -->
@@ -359,7 +364,7 @@
   </script>
   <script src="js/questions.js?v=3"></script>
   <script src="js/realtime.js?v=3"></script>
-  <script src="js/dashboard-auth.js?v=3"></script>
-  <script src="js/dashboard.js?v=3"></script>
+  <script src="js/dashboard-auth.js?v=4"></script>
+  <script src="js/dashboard.js?v=4"></script>
 </body>
 </html>

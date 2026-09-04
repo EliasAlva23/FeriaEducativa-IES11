@@ -7,8 +7,11 @@
      #toasts arrancan con el atributo [hidden] EN EL MARKUP: el panel
      queda oculto aunque fallen Tailwind, styles.css o JavaScript.
    - Un <script> inline en <head> pre-desbloquea (quita data-dash-locked
-     y agrega data-dash-ok) sólo si hay sesión válida en localStorage o
-     sessionStorage — así no hay parpadeo del login.
+     y agrega data-dash-ok) sólo si hay sesión válida en sessionStorage
+     — así no hay parpadeo del login.
+   - La sesión vive SÓLO en sessionStorage: al cerrar la pestaña / el
+     navegador (o al recargar de cero) la clave se vuelve a pedir. No se
+     persiste nada en localStorage.
    - Este archivo termina de mostrar los contenedores (quita [hidden]) y
      gestiona la tarjeta de login: valida el PIN, guarda la sesión y, a
      los 3 intentos fallidos, redirige a index.html.
@@ -25,17 +28,18 @@
   var MAX_INTENTOS = 3;
   var CONTENEDORES = ['dash-header', 'dash-main', 'dash-footer', 'toasts'];
 
-  function leerFlag(store) {
-    try { return store && store.getItem(CLAVE_OK) === '1'; } catch (e) { return false; }
-  }
-
+  /* La sesión del panel vive SÓLO en sessionStorage: se pide la clave de
+     nuevo al cerrar/reabrir el navegador. */
   function estaAutorizado() {
-    return leerFlag(window.localStorage) || leerFlag(window.sessionStorage);
+    try { return window.sessionStorage.getItem(CLAVE_OK) === '1'; }
+    catch (e) { return false; }
   }
 
   function guardarSesion() {
-    try { window.localStorage.setItem(CLAVE_OK, '1'); } catch (e) { /* noop */ }
     try { window.sessionStorage.setItem(CLAVE_OK, '1'); } catch (e) { /* noop */ }
+    // Limpiar cualquier persistencia vieja (versiones anteriores usaban
+    // localStorage). Es sólo la marca de sesión, NO datos de encuestas.
+    try { window.localStorage.removeItem(CLAVE_OK); } catch (e) { /* noop */ }
   }
 
   function mostrarPanel() {
