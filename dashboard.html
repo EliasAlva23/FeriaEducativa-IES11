@@ -1,49 +1,53 @@
 <!DOCTYPE html>
-<html lang="es-AR">
+<!-- data-dash-locked arranca puesto: el panel queda oculto por CSS aunque
+     JavaScript esté deshabilitado (fail-closed). El script de abajo lo quita
+     sólo si hay sesión válida. -->
+<html lang="es-AR" data-dash-locked="1">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#02447B" />
   <meta name="robots" content="noindex, nofollow" />
-  <meta name="description" content="Panel en vivo del Test Vocacional · Expo Educativa 2026 · IES N.° 11." />
-  <title>Dashboard en Vivo · Expo Educativa 2026 · IES N.° 11</title>
+  <meta name="description" content="Panel analítico del Test Vocacional · Expo Educativa 2026 · IES N.° 11." />
+  <title>Panel Analítico · Expo Educativa 2026 · IES N.° 11</title>
   <link rel="icon" type="image/svg+xml"
         href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='32' fill='%2302447B'/%3E%3Ctext x='32' y='43' font-size='34' font-family='Arial,sans-serif' font-weight='bold' fill='white' text-anchor='middle'%3E11%3C/text%3E%3C/svg%3E" />
 
   <!--
     ============================================================
-    DASHBOARD PANTALLA GIGANTE  (dashboard.html)
+    PANEL ANALÍTICO DEL STAND  (dashboard.html)
     ============================================================
-    Vista para proyectar en la netbook / TV del stand. Se actualiza
-    en vivo con cada test que completan los alumnos (js/realtime.js
-    sobre ntfy.sh, multi-dispositivo).
+    Panel modular de toma de decisiones. Se actualiza en vivo con
+    cada test (js/realtime.js sobre ntfy.sh, multi-dispositivo).
 
-    Acceso restringido: pide PIN 'admin11' (js/dashboard-auth.js).
+    Acceso restringido: PIN 'admin11' (js/dashboard-auth.js).
     Sin PIN correcto → redirige a index.html.
 
-    Dos vistas (conmutador en la barra):
-      · General   -> Podio + barras multicolor + dona por área
-      · Detallada -> las 18 tecnicaturas ordenadas por votos + %
+    Estructura (todo reacciona al filtro por Jornada):
+      · Fila KPI: Encuestados · Edad promedio · Carrera más elegida
+      · Vista General:   Ranking 18 · Presencia 1ª/2ª/3ª · Áreas · Podio · Feed
+      · Vista Detallada: Desglose 18 + demografía (Situación · Localidad · Sexo/Edad)
 
     Identidad: paleta oficial + toggle claro/oscuro (js/theme.js).
     Gráficos con Chart.js (CDN).
     ============================================================
   -->
 
-  <!-- Bloqueo temprano: oculta el contenido hasta validar el PIN -->
   <script>
+    /* Desbloqueo temprano (antes del primer paint) SÓLO si hay sesión válida
+       en localStorage o sessionStorage. Ante cualquier error: queda bloqueado. */
     try {
-      if (localStorage.getItem('feria_ies11_dash_ok') !== '1') {
-        document.documentElement.dataset.dashLocked = '1';
-      }
-    } catch (e) { document.documentElement.dataset.dashLocked = '1'; }
+      var _ok = localStorage.getItem('feria_ies11_dash_ok') === '1'
+             || sessionStorage.getItem('feria_ies11_dash_ok') === '1';
+      if (_ok) document.documentElement.removeAttribute('data-dash-locked');
+    } catch (e) { /* se mantiene data-dash-locked */ }
   </script>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="js/theme.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
-  <!-- Tipografía institucional -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet"
@@ -51,7 +55,7 @@
 
   <link rel="stylesheet" href="css/styles.css" />
 </head>
-<body class="dash-body h-screen overflow-hidden antialiased flex flex-col">
+<body class="dash-body min-h-screen antialiased">
 
   <!-- ====================================================== -->
   <!-- PANTALLA DE ACCESO (PIN)                                -->
@@ -72,7 +76,7 @@
   <!-- ====================================================== -->
   <!-- ENCABEZADO INSTITUCIONAL                                -->
   <!-- ====================================================== -->
-  <header class="app-header flex-none">
+  <header class="app-header sticky top-0 z-30">
     <div class="app-header__inst">
       <img src="img/logo-ies11.png" alt="Escudo IES N.° 11" class="app-header__escudo"
            onerror="this.style.display='none';this.nextElementSibling.hidden=false" />
@@ -85,7 +89,7 @@
 
     <div class="app-header__title">
       <h1>Expo Educativa 2026</h1>
-      <p>Test Vocacional · en vivo</p>
+      <p>Panel Analítico · Test Vocacional</p>
       <div class="mt-1 flex items-center justify-center gap-3">
         <span id="estado-conexion" class="hidden rounded-full px-3 py-0.5 text-xs font-semibold">
           Sin conexión con el servidor
@@ -105,10 +109,22 @@
   <!-- ====================================================== -->
   <!-- CONTENIDO                                               -->
   <!-- ====================================================== -->
-  <main class="flex flex-1 min-h-0 flex-col gap-4 p-6">
+  <main class="mx-auto w-full max-w-[1700px] space-y-6 p-6">
 
-    <!-- Toolbar: filtro por jornada + conmutador de vista -->
-    <div class="dash-toolbar flex-none">
+    <!-- ================= TARJETA QR DE ACCESO =================
+         Flotante en pantallas grandes (stand) · en el flujo en pantallas chicas -->
+    <aside id="dash-qr" class="dash-qr" aria-label="Código QR para hacer el test">
+      <p class="dash-qr__titulo">¡Escaneá y realizá tu Test!</p>
+      <p class="dash-qr__sub">Ingresá desde tu celular</p>
+      <div class="dash-qr__marco">
+        <div id="dash-qr-codigo" aria-hidden="true"></div>
+      </div>
+      <a class="dash-qr__url" href="https://test-vocacional-ies11.netlify.app"
+         target="_blank" rel="noopener">test-vocacional-ies11.netlify.app</a>
+    </aside>
+
+    <!-- Barra de control -->
+    <div class="dash-toolbar">
       <label for="filtro-jornada" class="dash-rotulo">Jornada</label>
       <select id="filtro-jornada" class="campo dash-toolbar__select">
         <option value="global">Global (Toda la Expo)</option>
@@ -122,63 +138,144 @@
           Vista General
         </button>
         <button type="button" class="dash-vista__btn" data-vista="detallada" role="tab" aria-selected="false">
-          Vista Detallada (18 Tecnicaturas)
+          Vista Detallada
         </button>
       </div>
     </div>
 
-    <!-- ------- VISTA GENERAL (Podio + Áreas) ------- -->
-    <div id="vista-general" class="grid flex-1 min-h-0 grid-cols-12 gap-6">
-
-      <section class="col-span-3 flex min-h-0 flex-col gap-5">
-        <div class="dash-kpi p-6">
-          <p id="contador-participantes" class="text-8xl font-black leading-none">0</p>
-          <p class="mt-1 text-sm font-bold uppercase tracking-wide text-white/80">
-            estudiantes ya descubrieron<br />su vocación hoy
-          </p>
+    <!-- ================= FILA KPI ================= -->
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <article class="kpi-card">
+        <span class="kpi-card__icono" id="kpi-ico-total" aria-hidden="true"></span>
+        <div class="min-w-0">
+          <p class="kpi-card__valor" id="contador-participantes">0</p>
+          <p class="kpi-card__label">Encuestados totales</p>
+          <p class="kpi-card__sub">Tests completados en la jornada seleccionada</p>
         </div>
+      </article>
 
-        <div class="dash-panel flex-none p-5">
-          <p class="dash-rotulo mb-3">🏆 Podio · Top 3 tecnicaturas</p>
-          <div id="podio" class="space-y-2"></div>
+      <article class="kpi-card">
+        <span class="kpi-card__icono" id="kpi-ico-edad" aria-hidden="true"></span>
+        <div class="min-w-0">
+          <p class="kpi-card__valor" id="kpi-edad">—</p>
+          <p class="kpi-card__label">Edad promedio</p>
+          <p class="kpi-card__sub">Promedio calculado sobre quienes indicaron su edad</p>
         </div>
+      </article>
 
-        <div class="dash-panel flex min-h-0 flex-1 flex-col p-5">
-          <p class="dash-rotulo mb-3">Últimos participantes</p>
-          <ul id="feed-actividad" class="min-h-0 flex-1 space-y-2 overflow-hidden text-sm"></ul>
+      <article class="kpi-card" id="kpi-carrera-card">
+        <span class="kpi-card__icono" id="kpi-ico-carrera" aria-hidden="true"></span>
+        <div class="min-w-0">
+          <p class="kpi-card__valor kpi-card__valor--sm" id="kpi-carrera">—</p>
+          <p class="kpi-card__label">Carrera más elegida</p>
+          <p class="kpi-card__sub" id="kpi-carrera-sub">La N.° 1 del ranking de afinidades</p>
+        </div>
+      </article>
+    </section>
+
+    <!-- ================= VISTA GENERAL ================= -->
+    <div id="vista-general" class="grid grid-flow-row-dense grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+      <!-- Ranking de las 18 tecnicaturas -->
+      <section class="dash-panel p-5 md:col-span-2 lg:col-span-2">
+        <p class="dash-rotulo">Ranking de las 18 tecnicaturas</p>
+        <p class="panel-sub">Apariciones totales en el Top 3, ordenadas de mayor a menor · color por área</p>
+        <div class="mt-3 overflow-x-auto">
+          <div class="dash-canvas-wrap dash-canvas-wrap--alto">
+            <canvas id="grafico-carreras"></canvas>
+          </div>
         </div>
       </section>
 
-      <section class="col-span-6 dash-panel flex min-h-0 flex-col p-5">
-        <p class="dash-rotulo mb-3">Tecnicaturas · apariciones en el Top 3 (color por área)</p>
-        <div class="relative min-h-0 flex-1">
-          <canvas id="grafico-carreras"></canvas>
-        </div>
-      </section>
-
-      <section class="col-span-3 dash-panel flex min-h-0 flex-col p-5">
-        <p class="dash-rotulo mb-3">Perfil dominante por área</p>
-        <div class="relative min-h-0 flex-1">
+      <!-- Áreas Vocacionales -->
+      <section class="dash-panel p-5 md:col-span-1 lg:col-span-1">
+        <p class="dash-rotulo">Áreas vocacionales</p>
+        <p class="panel-sub">Distribución de afinidades por área de conocimiento · tocá un área para ver sus carreras</p>
+        <div class="dash-canvas-wrap mt-3">
           <canvas id="grafico-areas"></canvas>
         </div>
-        <ul id="leyenda-areas" class="mt-4 space-y-1 text-xs"></ul>
+        <ul id="leyenda-areas" class="mt-4 space-y-1 text-sm"></ul>
+      </section>
+
+      <!-- Presencia en 1ª / 2ª / 3ª afinidad -->
+      <section class="dash-panel p-5 md:col-span-2 lg:col-span-2">
+        <p class="dash-rotulo">Presencia en las 3 afinidades principales</p>
+        <p class="panel-sub">Cuántas veces cada carrera fue elegida como 1.ª, 2.ª o 3.ª opción</p>
+        <div class="mt-3 overflow-x-auto">
+          <div class="dash-canvas-wrap dash-canvas-wrap--alto">
+            <canvas id="grafico-posiciones"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- Podio -->
+      <section class="dash-panel p-5 md:col-span-1 lg:col-span-1">
+        <p class="dash-rotulo">🏆 Podio · Top 3 tecnicaturas</p>
+        <p class="panel-sub">Las 3 carreras con más apariciones en el Top 3</p>
+        <div id="podio" class="mt-3 space-y-2"></div>
+      </section>
+
+      <!-- Feed -->
+      <section class="dash-panel p-5 md:col-span-2 lg:col-span-3">
+        <p class="dash-rotulo">Últimos participantes</p>
+        <p class="panel-sub">Actividad reciente en tiempo real</p>
+        <ul id="feed-actividad" class="mt-3 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2 text-sm"></ul>
       </section>
     </div>
 
-    <!-- ------- VISTA DETALLADA (18 Tecnicaturas) ------- -->
-    <div id="vista-detallada" class="dash-panel flex min-h-0 flex-1 flex-col p-6" hidden>
-      <div class="flex items-baseline justify-between">
-        <p class="dash-rotulo">Desglose por tecnicatura · más votada → menos votada</p>
-        <p class="text-sm texto-suave">
-          Total participantes: <span id="detalle-total" class="font-bold">0</span>
-        </p>
+    <!-- ================= VISTA DETALLADA ================= -->
+    <div id="vista-detallada" class="space-y-6" hidden>
+
+      <section class="dash-panel p-6">
+        <div class="flex flex-wrap items-baseline justify-between gap-2">
+          <div>
+            <p class="dash-rotulo">Desglose por tecnicatura</p>
+            <p class="panel-sub">Las 18 carreras de más a menos votada · votos y % sobre el total de participantes</p>
+          </div>
+          <p class="text-sm texto-suave">
+            Total participantes: <span id="detalle-total" class="font-bold">0</span>
+          </p>
+        </div>
+        <div class="mt-4 overflow-x-auto">
+          <div id="detalle-lista" class="space-y-2 min-w-[560px]"></div>
+        </div>
+      </section>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <section class="dash-panel p-5">
+          <p class="dash-rotulo">Situación educativa</p>
+          <p class="panel-sub">Contexto académico de quienes participaron</p>
+          <div class="mt-3 overflow-x-auto">
+            <div id="demo-situacion" class="demo-lista min-w-[280px]"></div>
+          </div>
+        </section>
+
+        <section class="dash-panel p-5">
+          <p class="dash-rotulo">Origen · localidad</p>
+          <p class="panel-sub">Procedencia de quienes participaron (localidades más frecuentes)</p>
+          <div class="mt-3 overflow-x-auto">
+            <div id="demo-localidad" class="demo-lista min-w-[280px]"></div>
+          </div>
+        </section>
+
+        <section class="dash-panel p-5">
+          <p class="dash-rotulo">Por género y edad</p>
+          <p class="panel-sub">Distribución porcentual por género y por rango etario</p>
+          <div class="mt-3 overflow-x-auto">
+            <div class="min-w-[280px]">
+              <p class="demo-titulo">Género</p>
+              <div id="demo-genero" class="demo-lista mt-1"></div>
+              <p class="demo-titulo mt-4">Rango etario</p>
+              <div id="demo-edad" class="demo-lista mt-1"></div>
+            </div>
+          </div>
+        </section>
       </div>
-      <div id="detalle-lista" class="mt-4 min-h-0 flex-1 space-y-2 overflow-y-auto pr-2"></div>
     </div>
   </main>
 
-  <!-- Pie institucional compacto -->
-  <footer class="app-footer app-footer--barra flex-none">
+  <!-- Pie institucional -->
+  <footer class="app-footer app-footer--barra">
     <div class="app-footer__row">
       <a href="https://maps.app.goo.gl/infU3zgHUbP6jBt77" target="_blank" rel="noopener noreferrer">
         📍 Gral. Alvear 1145, Y4600 San Salvador de Jujuy
@@ -190,6 +287,7 @@
     </div>
 
     <div class="app-footer__grupo">
+      <button id="btn-limpiar-datos" type="button" class="btn btn--peligro">🧹 Limpiar datos de prueba</button>
       <button id="btn-exportar-csv" type="button" class="btn btn--csv">🔒 Exportar Dataset CSV</button>
       <div class="app-footer__dev">
         <img src="img/logo-TIT.png" alt="Tech &amp; Innovation Team" class="app-footer__tit" />

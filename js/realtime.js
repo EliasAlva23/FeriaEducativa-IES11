@@ -36,13 +36,24 @@
   'use strict';
 
   // === Configuración ========================================
-  const TOPIC = 'expo-ies11-2026-vocacional-9b3f2a';   // cambiá el sufijo para reiniciar el canal
+  const TOPIC_BASE = 'expo-ies11-2026-vocacional';
+  const SUFIJO_DEFECTO = '9b3f2a';                     // cambialo (y volvé a subir) para arrancar de cero
   const NTFY_BASE = 'https://ntfy.sh';
   const CLAVE_STORAGE = 'feria_ies11_resultados';
   const CLAVE_RESET = 'feria_ies11_reset_at';
+  const CLAVE_SUFIJO = 'feria_ies11_topic_sufijo';     // override local opcional (Realtime.rotarCanal())
   const NOMBRE_CANAL = 'feria-ies11';
   const MAX_HISTORIAL = 2000;
   // =========================================================
+
+  function sufijoActivo() {
+    try {
+      const s = window.localStorage.getItem(CLAVE_SUFIJO);
+      if (s && /^[a-z0-9-]{3,40}$/.test(s)) return s;
+    } catch (e) { /* noop */ }
+    return SUFIJO_DEFECTO;
+  }
+  const TOPIC = `${TOPIC_BASE}-${sufijoActivo()}`;
 
   function crearAdaptador() {
     const suscriptores = [];
@@ -250,11 +261,25 @@
         publicarRemoto(envoltura);
       },
 
+      /**
+       * Rota el canal a un tópico nuevo (sufijo aleatorio guardado localmente)
+       * y limpia el espejo. Devuelve el nuevo sufijo. Hay que RECARGAR la página
+       * y — ojo — los celulares seguirán publicando al tópico por defecto salvo
+       * que también se actualice el QR / el código. Para la jornada oficial es
+       * preferible cambiar SUFIJO_DEFECTO en el código y volver a subir.
+       */
+      rotarCanal() {
+        const nuevo = 'j' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+        try { window.localStorage.setItem(CLAVE_SUFIJO, nuevo); } catch (e) { /* noop */ }
+        aplicarReinicio(Date.now());
+        return nuevo;
+      },
+
       estadoRemoto() {
         return estadoRemoto;
       },
 
-      _config: { TOPIC, NTFY_BASE },
+      _config: { TOPIC, NTFY_BASE, sufijo: sufijoActivo() },
     };
   }
 

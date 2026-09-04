@@ -335,12 +335,12 @@ a { color: var(--highlight); }
 
 /* Variante compacta (dashboard) */
 .app-footer--barra {
-  margin-top: 0;
-  padding: 0.5rem 1.6rem;
+  margin-top: 1.5rem;
+  padding: 0.75rem 1.6rem;
   display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;
-  gap: 0.5rem 1.25rem;
-  background: transparent;
-  -webkit-backdrop-filter: none; backdrop-filter: none;
+  gap: 0.6rem 1.25rem;
+  background: var(--bg-elevado);
+  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
   border-top: 1px solid var(--borde);
 }
 .app-footer--barra .app-footer__row { justify-content: flex-start; }
@@ -564,10 +564,10 @@ a { color: var(--highlight); }
    ----------------------------------------------------------- */
 .dash-body { color: var(--texto); }
 
-/* Toolbar (filtro por jornada) */
+/* Toolbar (filtro por jornada + conmutador de vista) */
 .dash-toolbar {
-  display: flex; align-items: center; gap: 0.75rem;
-  padding: 0.55rem 0.9rem;
+  display: flex; align-items: center; flex-wrap: wrap; gap: 0.75rem;
+  padding: 0.6rem 0.9rem;
   border-radius: var(--radio-sm);
   background: var(--bg-elevado);
   -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
@@ -575,7 +575,7 @@ a { color: var(--highlight); }
   box-shadow: var(--sombra-panel);
 }
 .dash-toolbar .dash-rotulo { margin: 0; }
-.dash-toolbar__select { margin: 0; width: auto; min-width: 240px; }
+.dash-toolbar__select { margin: 0; width: auto; min-width: 220px; }
 
 /* Podio Top 3 */
 #podio { display: flex; flex-direction: column; gap: 0.5rem; }
@@ -652,9 +652,30 @@ a { color: var(--highlight); }
 .toast__titulo { font-weight: 700; color: var(--texto); }
 .toast__sub { font-size: 0.75rem; color: var(--texto-suave); }
 
-/* Leyenda de áreas */
-#leyenda-areas li { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; color: var(--texto-suave); }
-#leyenda-areas .leyenda-punto { height: 0.62rem; width: 0.62rem; border-radius: 9999px; display: inline-block; margin-right: 0.4rem; }
+/* Leyenda de áreas — expandible (carreras que la componen) */
+#leyenda-areas { list-style: none; margin: 0; padding: 0; }
+.leyenda-area { color: var(--texto-suave); border-radius: 10px; }
+.leyenda-area + .leyenda-area { margin-top: 0.15rem; }
+.leyenda-area__cab {
+  width: 100%; border: 0; background: transparent; cursor: pointer;
+  display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
+  padding: 0.4rem 0.5rem; border-radius: 10px;
+  font-family: var(--fuente); font-size: 0.86rem; font-weight: 600; color: var(--texto);
+}
+.leyenda-area__cab:hover { background: var(--bg-suave); }
+.leyenda-punto { height: 0.62rem; width: 0.62rem; border-radius: 9999px; display: inline-block; margin-right: 0.45rem; }
+.leyenda-area__flecha { display: inline-block; transition: transform var(--transicion); color: var(--texto-suave); }
+.leyenda-area.abierta .leyenda-area__flecha { transform: rotate(180deg); }
+.leyenda-area__carreras {
+  list-style: none; margin: 0; padding: 0 0.5rem;
+  max-height: 0; overflow: hidden; transition: max-height var(--transicion-lenta), padding var(--transicion-lenta);
+}
+.leyenda-area.abierta .leyenda-area__carreras { max-height: 22rem; padding: 0.25rem 0.5rem 0.5rem; }
+.leyenda-area__carreras li {
+  display: flex; justify-content: space-between; gap: 0.5rem;
+  font-size: 0.78rem; color: var(--texto-suave); padding: 0.18rem 0;
+  border-left: 2px solid var(--borde); padding-left: 0.6rem; margin-left: 0.25rem;
+}
 
 /* Conmutador de vista (General / Detallada) */
 .dash-vista {
@@ -673,6 +694,71 @@ a { color: var(--highlight); }
   box-shadow: 0 8px 20px -8px rgba(123, 121, 177, 0.6);
 }
 
+/* Subtítulo explicativo bajo el rótulo de cada panel */
+.panel-sub { color: var(--texto-suave); font-size: 0.82rem; line-height: 1.35; margin-top: 0.25rem; }
+
+/* Contenedor de canvas con alto fijo (para maintainAspectRatio:false).
+   En móvil, los gráficos de barras (--alto) reservan un ancho mínimo y el
+   contenedor padre (.overflow-x-auto) permite el scroll horizontal interno. */
+.dash-canvas-wrap { position: relative; width: 100%; height: 18rem; }
+.dash-canvas-wrap--alto { height: 34rem; min-width: 440px; }
+@media (min-width: 768px) {
+  .dash-canvas-wrap--alto { height: 40rem; min-width: 0; }
+}
+
+/* Fila KPI superior (la grilla la maneja Tailwind en el HTML) */
+.kpi-card {
+  display: flex; align-items: center; gap: 1rem;
+  padding: 1.25rem 1.4rem;
+  border-radius: var(--radio);
+  background: var(--bg-elevado);
+  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+  border: 1px solid var(--borde);
+  box-shadow: var(--glow);
+}
+.kpi-card__icono {
+  flex: none; width: 3.1rem; height: 3.1rem;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 16px;
+  color: var(--secundario);
+  background: color-mix(in srgb, var(--secundario) 15%, transparent);
+}
+.kpi-card__icono svg { width: 1.7rem; height: 1.7rem; }
+.kpi-card__valor { font-size: 2.6rem; font-weight: 900; line-height: 1.05; color: var(--texto); }
+.kpi-card__valor--sm { font-size: 1.25rem; line-height: 1.2; }
+.kpi-card__label { font-size: 0.9rem; font-weight: 800; color: var(--texto); margin-top: 0.1rem; }
+.kpi-card__sub { font-size: 0.76rem; color: var(--texto-suave); line-height: 1.3; margin-top: 0.15rem; }
+
+#kpi-carrera-card { border-left: 5px solid var(--acento-card, var(--secundario)); }
+
+/* Paneles demográficos (distribución con barra) */
+.demo-titulo { font-size: 0.78rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--secundario); }
+.demo-lista { display: flex; flex-direction: column; gap: 0.45rem; }
+.demo-fila {
+  display: grid;
+  grid-template-columns: minmax(6rem, 1.1fr) 2fr 2.4rem 2.8rem;
+  align-items: center; gap: 0.6rem;
+}
+.demo-label { font-size: 0.82rem; color: var(--texto); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.demo-barra { height: 0.55rem; border-radius: 9999px; background: var(--borde); overflow: hidden; }
+.demo-barra > span { display: block; height: 100%; border-radius: 9999px; }
+.demo-valor { font-weight: 800; color: var(--texto); text-align: right; font-variant-numeric: tabular-nums; }
+.demo-pct { font-weight: 700; color: var(--texto-suave); text-align: right; font-variant-numeric: tabular-nums; }
+
+/* Botón destructivo (limpiar datos) */
+.btn--peligro {
+  background: var(--bg-elevado);
+  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+  border: 1.5px solid #e11d48;
+  color: #e11d48;
+  border-radius: 9999px;
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+}
+.btn--peligro:hover:not(:disabled) { background: #e11d48; color: #fff; box-shadow: 0 12px 28px -10px rgba(225,29,72,0.5); }
+:root[data-tema="oscuro"] .btn--peligro { border-color: #fb7185; color: #fb7185; }
+:root[data-tema="oscuro"] .btn--peligro:hover:not(:disabled) { background: #fb7185; color: #10203f; }
+
 /* Vista detallada: filas de las 18 tecnicaturas */
 .detalle-fila {
   display: grid;
@@ -690,6 +776,93 @@ a { color: var(--highlight); }
 .detalle-barra > span { display: block; height: 100%; border-radius: 9999px; }
 .detalle-votos { font-weight: 800; font-size: 1.1rem; color: var(--texto); text-align: right; font-variant-numeric: tabular-nums; }
 .detalle-pct { font-weight: 700; color: var(--texto-suave); text-align: right; font-variant-numeric: tabular-nums; }
+
+/* En pantallas chicas, las tablas/desgloses no se comprimen: el contenedor
+   padre (.overflow-x-auto en el HTML) habilita el scroll horizontal interno
+   y las filas conservan un ancho mínimo legible. */
+#detalle-lista { min-width: 560px; }
+.demo-lista { min-width: 260px; }
+
+/* -----------------------------------------------------------
+   Tarjeta QR de acceso al test (pantalla gigante)
+   -----------------------------------------------------------
+   En pantallas grandes se ancla como riel izquierdo fijo (main
+   reserva ese espacio con padding-left, así no tapa los gráficos).
+   En pantallas medianas/chicas va en el flujo, arriba de todo.
+   ----------------------------------------------------------- */
+.dash-qr {
+  position: fixed;
+  left: 1.5rem;
+  top: 7rem;
+  z-index: 45;
+  width: 258px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.35rem;
+  padding: 1.1rem 1rem 0.9rem;
+  border-radius: var(--radio);
+  background: var(--bg-elevado);
+  -webkit-backdrop-filter: var(--blur);
+  backdrop-filter: var(--blur);
+  border: 1px solid var(--borde);
+  box-shadow: var(--glow-fuerte);
+}
+@media (min-width: 1280px) {
+  .dash-body > main { padding-left: 310px; }
+}
+.dash-qr__titulo {
+  font-size: 1.05rem;
+  font-weight: 800;
+  line-height: 1.2;
+  color: var(--texto);
+}
+.dash-qr__sub { font-size: 0.82rem; font-weight: 600; color: var(--texto-suave); }
+
+/* Marco SIEMPRE claro para que la cámara lea bien en cualquier tema */
+.dash-qr__marco {
+  margin-top: 0.25rem;
+  padding: 0.7rem;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 0 24px -6px rgba(52, 111, 176, 0.55);
+  line-height: 0;
+}
+.dash-qr__marco img,
+.dash-qr__marco canvas {
+  display: block;
+  width: 168px;
+  height: 168px;   /* >= 150px para lectura cómoda */
+}
+.dash-qr__fallback {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 168px; height: 168px;
+  font-size: 0.85rem; font-weight: 700; color: var(--oficial-marino);
+  line-height: 1.3;
+}
+
+.dash-qr__url {
+  margin-top: 0.15rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--highlight) !important;
+  text-decoration: none;
+  word-break: break-all;
+}
+.dash-qr__url:hover { text-decoration: underline; }
+
+/* En pantallas medianas/chicas: la tarjeta va en el flujo, arriba de todo */
+@media (max-width: 1279px) {
+  .dash-qr {
+    position: static;
+    width: 100%;
+    max-width: 380px;
+    margin: 0 auto;
+    box-shadow: var(--glow);
+  }
+}
 
 /* -----------------------------------------------------------
    13. Reja de acceso al dashboard (PIN)

@@ -132,9 +132,20 @@
           <label for="f-apellido" class="etiqueta">Apellido</label>
           <input id="f-apellido" name="apellido" type="text" autocomplete="family-name" class="campo" />
         </div>
-        <div>
-          <label for="f-edad" class="etiqueta">Edad</label>
-          <input id="f-edad" name="edad" type="number" inputmode="numeric" min="10" max="99" class="campo" />
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label for="f-edad" class="etiqueta">Edad</label>
+            <input id="f-edad" name="edad" type="number" inputmode="numeric" min="10" max="99" class="campo" />
+          </div>
+          <div>
+            <label for="f-genero" class="etiqueta">Género <span class="texto-suave">(opcional)</span></label>
+            <select id="f-genero" name="genero" class="campo">
+              <option value="">Prefiero no decir</option>
+              <option value="Femenino">Femenino</option>
+              <option value="Masculino">Masculino</option>
+              <option value="Otro">Otro</option>
+            </select>
+          </div>
         </div>
         <div>
           <label for="f-localidad" class="etiqueta">Localidad</label>
@@ -158,11 +169,11 @@
           <label for="f-situacion" class="etiqueta">Situación educativa</label>
           <select id="f-situacion" name="situacionEducativa" class="campo">
             <option value="">Elegí una opción…</option>
-            <option value="Secundario en curso">Secundario en curso</option>
-            <option value="Secundario completo">Secundario completo</option>
-            <option value="Terciario/Universitario en curso">Terciario/Universitario en curso</option>
-            <option value="Estudios interrumpidos">Estudios interrumpidos</option>
-            <option value="Otra">Otra</option>
+            <option value="Cursando 3°/4° año">Cursando 3.° o 4.° año del secundario</option>
+            <option value="Cursando último año">Cursando el último año del secundario</option>
+            <option value="Secundario completo / Egresado">Terminé el secundario (egresado/a)</option>
+            <option value="Estudiando y trabajando">Estoy estudiando y trabajando</option>
+            <option value="Otra">Otra situación</option>
           </select>
         </div>
 
