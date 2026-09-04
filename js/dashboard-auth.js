@@ -1,14 +1,19 @@
 /* ============================================================
    ACCESO AL DASHBOARD  (js/dashboard-auth.js)
    ============================================================
-   Protege dashboard.html con un PIN. Sin PIN correcto, el
-   contenido queda oculto (data-dash-locked en <html>, ver
-   css/styles.css) y a los 3 intentos fallidos redirige a index.html.
+   Protege dashboard.html con un PIN.
+
+   - <html> arranca con data-dash-locked="1" en el markup: el panel
+     queda oculto por CSS aunque JavaScript esté deshabilitado.
+   - Un <script> inline en <head> quita el atributo antes del primer
+     paint SÓLO si hay sesión válida (localStorage o sessionStorage).
+   - Este archivo dibuja/gestiona la tarjeta de login: valida el PIN,
+     guarda la sesión y, a los 3 intentos fallidos, redirige a index.html.
 
    PIN: 'admin11'  (cambialo acá y volvé a subir).
 
-   Aclaración honesta: es una barrera para el stand, NO seguridad
-   real. El código y los datos viven en el navegador del visitante.
+   Aclaración honesta: es una barrera para el stand, NO seguridad real.
+   El código y los datos viven en el navegador del visitante.
    ============================================================ */
 (function () {
   'use strict';
@@ -17,13 +22,22 @@
   var CLAVE_OK = 'feria_ies11_dash_ok';
   var MAX_INTENTOS = 3;
 
-  function estaAutorizado() {
-    try { return localStorage.getItem(CLAVE_OK) === '1'; } catch (e) { return false; }
+  function leerFlag(store) {
+    try { return store && store.getItem(CLAVE_OK) === '1'; } catch (e) { return false; }
   }
 
-  function desbloquear() {
-    try { localStorage.setItem(CLAVE_OK, '1'); } catch (e) { /* noop */ }
-    delete document.documentElement.dataset.dashLocked;
+  function estaAutorizado() {
+    return leerFlag(window.localStorage) || leerFlag(window.sessionStorage);
+  }
+
+  function guardarSesion() {
+    // localStorage = "recordar esta netbook"; sessionStorage = respaldo por pestaña.
+    try { window.localStorage.setItem(CLAVE_OK, '1'); } catch (e) { /* noop */ }
+    try { window.sessionStorage.setItem(CLAVE_OK, '1'); } catch (e) { /* noop */ }
+  }
+
+  function mostrarPanel() {
+    document.documentElement.removeAttribute('data-dash-locked');
     var gate = document.getElementById('gate-dashboard');
     if (gate) gate.remove();
     // Los gráficos pudieron crearse con el layout oculto: forzar re-medición.
@@ -33,13 +47,13 @@
   }
 
   function init() {
-    // Ya autorizado en este equipo: no mostrar la reja.
     if (estaAutorizado()) {
-      delete document.documentElement.dataset.dashLocked;
-      var g = document.getElementById('gate-dashboard');
-      if (g) g.remove();
+      mostrarPanel();
       return;
     }
+
+    // Sin sesión: el panel sigue bloqueado y sólo se ve la tarjeta de login.
+    document.documentElement.setAttribute('data-dash-locked', '1');
 
     var form = document.getElementById('gate-form');
     var input = document.getElementById('gate-pin');
@@ -52,7 +66,8 @@
     form.addEventListener('submit', function (ev) {
       ev.preventDefault();
       if (input.value === PIN) {
-        desbloquear();
+        guardarSesion();
+        mostrarPanel();
         return;
       }
       intentos += 1;
@@ -63,8 +78,8 @@
       }
       if (error) {
         error.hidden = false;
-        error.textContent = 'Clave incorrecta. Te quedan ' + (MAX_INTENTOS - intentos) +
-          (MAX_INTENTOS - intentos === 1 ? ' intento.' : ' intentos.');
+        var restan = MAX_INTENTOS - intentos;
+        error.textContent = 'Clave incorrecta. Te queda' + (restan === 1 ? ' 1 intento.' : 'n ' + restan + ' intentos.');
       }
       input.focus();
     });

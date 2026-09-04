@@ -94,10 +94,13 @@ Todo lo demás es 100% estático: **no hay build ni backend**.
   - Interfaz estable (`publicar` / `suscribirse` / `suscribirseAReinicio` / `obtenerHistorial` /
     `reiniciar` / `estadoRemoto`): migrar a Firebase/Supabase más adelante no toca `app.js` ni `dashboard.js`.
 
-- **Acceso al dashboard** (`js/dashboard-auth.js`): PIN **`admin11`** (constante `PIN`). Sin PIN,
-  el contenido queda oculto (`data-dash-locked` en `<html>`); a los 3 intentos fallidos redirige a
-  `index.html`. Una vez validado, el equipo queda recordado (`localStorage`). Es una **barrera para el
-  stand, no seguridad real** (código y datos viven en el navegador).
+- **Acceso al dashboard** (`js/dashboard-auth.js`): PIN **`admin11`** (constante `PIN`).
+  - `data-dash-locked="1"` viene **en el markup** de `<html>` y el CSS oculta header/main/footer/toasts:
+    el panel queda tapado **aunque JavaScript esté deshabilitado** (fail-closed). Un `<script>` inline en
+    `<head>` quita el atributo antes del primer paint **sólo si hay sesión** en `localStorage` o `sessionStorage`.
+  - Sin sesión sólo se ve la **tarjeta de login central**; a los **3 intentos fallidos** redirige a `index.html`.
+  - Al validar, la sesión se guarda en `localStorage` (recuerda la netbook) y `sessionStorage`.
+  - Es una **barrera para el stand, no seguridad real** (código y datos viven en el navegador).
 
 ## Modelo de datos del test (`js/questions.js`)
 
@@ -137,6 +140,10 @@ Estructura modular por tarjetas — **todo reacciona al filtro por Jornada** (Gl
   - **Demografía**: *Situación educativa* · *Origen / localidad* (top localidades) ·
     *Por género y edad* (distribución por género y por rango etario `<18 / 18-24 / 25-34 / 35+`).
 - **Textos explicativos** bajo cada rótulo de panel indicando qué se está analizando.
+- **Responsive (mobile-first)**: la grilla usa `grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3`
+  (+ `grid-flow-row-dense` para que no queden huecos). Los gráficos de barras y el desglose de las 18
+  van dentro de `overflow-x-auto` con ancho mínimo, así hacen **scroll horizontal interno** en pantallas
+  chicas sin romper el ancho de la página. `<meta viewport>` presente.
 
 ### Datos del formulario
 
