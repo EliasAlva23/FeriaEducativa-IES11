@@ -58,8 +58,17 @@
     ============================================================
   -->
 
+  <!-- Guardas mínimas: ningún ícono/imagen se vuelve gigante aunque falle el CSS -->
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    svg { max-width: 100%; max-height: 100%; }
+    img { max-width: 100%; height: auto; }
+    .opcion-card__icono svg, .kpi-card__icono svg { width: 1.5rem; height: 1.5rem; }
+  </style>
+
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="js/theme.js"></script>
+  <script src="js/theme.js?v=3"></script>
 
   <!-- Tipografía institucional -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -67,7 +76,7 @@
   <link rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" />
 
-  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/styles.css?v=3" />
 </head>
 <body class="min-h-screen antialiased">
 
@@ -269,8 +278,8 @@
   <!-- ====================================================== -->
   <!-- SCRIPTS                                                 -->
   <!-- ====================================================== -->
-  <script src="js/questions.js"></script>
-  <script src="js/realtime.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/questions.js?v=3"></script>
+  <script src="js/realtime.js?v=3"></script>
+  <script src="js/app.js?v=3"></script>
 </body>
 </html>

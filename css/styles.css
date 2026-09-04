@@ -595,12 +595,23 @@ a { color: var(--highlight); }
 .podio-valor { flex: none; font-size: 1.35rem; font-weight: 800; color: var(--texto); font-variant-numeric: tabular-nums; }
 
 .dash-panel {
+  padding: 1.35rem;
   background: var(--bg-elevado);
   -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
   border: 1px solid var(--borde);
   border-radius: var(--radio);
   box-shadow: var(--sombra-panel);
 }
+/* Separación de los contenidos respecto del rótulo/subtítulo del panel
+   (respaldo por si no cargan las clases mt-* de Tailwind) */
+.dash-panel > .panel-sub { margin-bottom: 0.9rem; }
+.dash-panel > .dash-scroll-x,
+.dash-panel > .dash-canvas-wrap,
+.dash-panel > #podio,
+.dash-panel > #leyenda-areas,
+.dash-panel > #feed-actividad,
+.dash-panel > .demo-lista,
+.dash-panel > .demo-titulo { margin-top: 0.85rem; }
 .dash-kpi {
   background-image: var(--grad-kpi);
   background-size: 160% 160%;
@@ -697,14 +708,24 @@ a { color: var(--highlight); }
 /* Subtítulo explicativo bajo el rótulo de cada panel */
 .panel-sub { color: var(--texto-suave); font-size: 0.82rem; line-height: 1.35; margin-top: 0.25rem; }
 
-/* Contenedor de canvas con alto fijo (para maintainAspectRatio:false).
-   En móvil, los gráficos de barras (--alto) reservan un ancho mínimo y el
-   contenedor padre (.overflow-x-auto) permite el scroll horizontal interno. */
+/* Scroll horizontal interno SÓLO para tablas / gráficos de barras horizontales.
+   El hijo reserva un ancho mínimo; el padre .dash-scroll-x hace el scroll sin
+   ensanchar la página. */
+.dash-scroll-x { width: 100%; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; }
+
+/* Contenedor de canvas con alto fijo (para maintainAspectRatio:false). */
 .dash-canvas-wrap { position: relative; width: 100%; height: 18rem; }
 .dash-canvas-wrap--alto { height: 34rem; min-width: 440px; }
 @media (min-width: 768px) {
-  .dash-canvas-wrap--alto { height: 40rem; min-width: 0; }
+  .dash-canvas-wrap--alto { height: 40rem; min-width: 640px; }
 }
+@media (min-width: 1024px) {
+  .dash-canvas-wrap--alto { min-width: 0; }
+}
+
+/* La tabla de las 18: ancho mínimo para que sus columnas no se aplasten */
+#detalle-lista { min-width: 560px; }
+@media (min-width: 1024px) { #detalle-lista { min-width: 0; } }
 
 /* Fila KPI superior (la grilla la maneja Tailwind en el HTML) */
 .kpi-card {
@@ -777,109 +798,70 @@ a { color: var(--highlight); }
 .detalle-votos { font-weight: 800; font-size: 1.1rem; color: var(--texto); text-align: right; font-variant-numeric: tabular-nums; }
 .detalle-pct { font-weight: 700; color: var(--texto-suave); text-align: right; font-variant-numeric: tabular-nums; }
 
-/* En pantallas chicas, las tablas/desgloses no se comprimen: el contenedor
-   padre (.overflow-x-auto en el HTML) habilita el scroll horizontal interno
-   y las filas conservan un ancho mínimo legible. */
-#detalle-lista { min-width: 560px; }
-.demo-lista { min-width: 260px; }
-
 /* -----------------------------------------------------------
-   Tarjeta QR de acceso al test (pantalla gigante)
+   Tarjeta QR de acceso al test (tarjeta en el flujo, delimitada)
    -----------------------------------------------------------
-   En pantallas grandes se ancla como riel izquierdo fijo (main
-   reserva ese espacio con padding-left, así no tapa los gráficos).
-   En pantallas medianas/chicas va en el flujo, arriba de todo.
+   Layout horizontal (QR + texto). En pantallas angostas se apila.
+   El marco del QR es SIEMPRE blanco para que la cámara lo lea.
    ----------------------------------------------------------- */
 .dash-qr {
-  position: fixed;
-  left: 1.5rem;
-  top: 7rem;
-  z-index: 45;
-  width: 258px;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  text-align: center;
-  gap: 0.35rem;
-  padding: 1.1rem 1rem 0.9rem;
-  border-radius: var(--radio);
-  background: var(--bg-elevado);
-  -webkit-backdrop-filter: var(--blur);
-  backdrop-filter: var(--blur);
-  border: 1px solid var(--borde);
-  box-shadow: var(--glow-fuerte);
+  gap: 1.25rem;
+  padding: 1rem 1.25rem;
 }
-@media (min-width: 1280px) {
-  .dash-body > main { padding-left: 310px; }
-}
-.dash-qr__titulo {
-  font-size: 1.05rem;
-  font-weight: 800;
-  line-height: 1.2;
-  color: var(--texto);
-}
-.dash-qr__sub { font-size: 0.82rem; font-weight: 600; color: var(--texto-suave); }
-
-/* Marco SIEMPRE claro para que la cámara lea bien en cualquier tema */
 .dash-qr__marco {
-  margin-top: 0.25rem;
-  padding: 0.7rem;
+  flex: none;
+  padding: 0.6rem;
   border-radius: 14px;
   background: #ffffff;
-  box-shadow: 0 0 24px -6px rgba(52, 111, 176, 0.55);
+  box-shadow: 0 0 22px -6px rgba(52, 111, 176, 0.5);
   line-height: 0;
 }
+.dash-qr__marco > div { width: 156px; height: 156px; }
 .dash-qr__marco img,
 .dash-qr__marco canvas {
   display: block;
-  width: 168px;
-  height: 168px;   /* >= 150px para lectura cómoda */
+  width: 156px !important;
+  height: 156px !important;   /* >= 150px para lectura cómoda con la cámara */
 }
 .dash-qr__fallback {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 168px; height: 168px;
-  font-size: 0.85rem; font-weight: 700; color: var(--oficial-marino);
-  line-height: 1.3;
+  width: 156px; height: 156px; text-align: center;
+  font-size: 0.8rem; font-weight: 700; color: var(--oficial-marino); line-height: 1.3;
 }
-
+.dash-qr__texto { min-width: 0; }
+.dash-qr__titulo { font-size: 1.15rem; font-weight: 800; line-height: 1.2; color: var(--texto); }
+.dash-qr__sub { font-size: 0.85rem; font-weight: 600; color: var(--texto-suave); margin-top: 0.15rem; }
 .dash-qr__url {
-  margin-top: 0.15rem;
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.01em;
-  color: var(--highlight) !important;
-  text-decoration: none;
-  word-break: break-all;
+  display: inline-block; margin-top: 0.5rem;
+  font-size: 0.82rem; font-weight: 700;
+  color: var(--highlight) !important; text-decoration: none; word-break: break-all;
 }
 .dash-qr__url:hover { text-decoration: underline; }
 
-/* En pantallas medianas/chicas: la tarjeta va en el flujo, arriba de todo */
-@media (max-width: 1279px) {
-  .dash-qr {
-    position: static;
-    width: 100%;
-    max-width: 380px;
-    margin: 0 auto;
-    box-shadow: var(--glow);
-  }
+@media (max-width: 560px) {
+  .dash-qr { flex-direction: column; text-align: center; }
 }
 
 /* -----------------------------------------------------------
    13. Reja de acceso al dashboard (PIN)
    ----------------------------------------------------------- */
-#gate-dashboard { display: none; }
-:root[data-dash-locked] #gate-dashboard { display: flex; }
-:root[data-dash-locked] body > header,
-:root[data-dash-locked] body > main,
-:root[data-dash-locked] body > footer,
-:root[data-dash-locked] body > #toasts { display: none !important; }
+/* Refuerzo del bloqueo (el bloqueo primario son el atributo [hidden] y los
+   estilos críticos inline del <head>; esto es una capa extra). */
+:root[data-dash-locked] #dash-header,
+:root[data-dash-locked] #dash-main,
+:root[data-dash-locked] #dash-footer,
+:root[data-dash-locked] #toasts { display: none !important; }
 
 .gate {
-  position: fixed; inset: 0; z-index: 200;
-  align-items: center; justify-content: center; padding: 1.25rem;
+  position: fixed; inset: 0; z-index: 99999;
+  display: flex; align-items: center; justify-content: center; padding: 1.25rem;
   background: var(--bg);
   background-image: var(--grad-fondo);
 }
+:root:not([data-dash-locked]) #gate-dashboard { display: none !important; }
+
 .gate__caja {
   width: 100%; max-width: 380px;
   display: flex; flex-direction: column; gap: 0.85rem; text-align: center;
@@ -898,9 +880,16 @@ a { color: var(--highlight); }
 }
 .gate__titulo { font-size: 1.25rem; font-weight: 800; color: var(--texto); }
 .gate__texto { font-size: 0.9rem; color: var(--texto-suave); }
-.gate__caja .campo { text-align: center; letter-spacing: 0.12em; }
-.gate__volver { font-size: 0.85rem; color: var(--texto-suave); text-decoration: none; margin-top: 0.15rem; }
-.gate__volver:hover { color: var(--highlight); text-decoration: underline; }
+.gate__caja input {
+  width: 100%; text-align: center; letter-spacing: 0.12em;
+  border: 1.5px solid var(--borde-fuerte); border-radius: var(--radio-sm);
+  background: var(--bg-solido); color: var(--texto);
+  padding: 0.62rem 0.85rem; font-family: var(--fuente); font-size: 0.95rem;
+}
+:root[data-tema="oscuro"] .gate__caja input { background: var(--c-blue-dark); color: #fff; }
+.gate__caja input:focus { outline: none; border-color: var(--secundario); box-shadow: 0 0 0 4px var(--anillo-foco); }
+.gate__caja > a { font-size: 0.85rem; color: var(--texto-suave); text-decoration: none; margin-top: 0.15rem; }
+.gate__caja > a:hover { color: var(--highlight); text-decoration: underline; }
 
 /* -----------------------------------------------------------
    14. Modal (información de la carrera)

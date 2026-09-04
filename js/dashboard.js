@@ -66,8 +66,11 @@
 
   function iconoSVG(nombre) {
     const inner = ICONOS[nombre] || ICONOS.estrella || '';
-    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${inner}</svg>`;
+    // width/height explícitos: el ícono nunca puede volverse gigante aunque
+    // no cargue el CSS que lo dimensiona.
+    return `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+              style="max-width:100%;max-height:100%" aria-hidden="true">${inner}</svg>`;
   }
 
   function areaDominante(registro) {
@@ -736,15 +739,20 @@
     }
     cont.innerHTML = '';
     /* global QRCode */
-    new QRCode(cont, {
-      text: URL_TEST,
-      width: 190,
-      height: 190,
-      colorDark: '#02447B',
-      colorLight: '#ffffff',
-      correctLevel: QRCode.CorrectLevel.M, // ~15% de tolerancia, buen equilibrio a distancia
-    });
-    // qrcodejs alterna entre <canvas> y <img>; el CSS dimensiona ambos.
+    try {
+      new QRCode(cont, {
+        text: URL_TEST,
+        width: 200,
+        height: 200,
+        colorDark: '#02447B',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.M, // ~15% de tolerancia, buen equilibrio a distancia
+      });
+    } catch (e) {
+      cont.innerHTML = '<span class="dash-qr__fallback">Abrí el link de abajo 👇</span>';
+      return;
+    }
+    // qrcodejs alterna entre <canvas> y <img>; el CSS los dimensiona a 156px.
     const img = cont.querySelector('img');
     if (img) img.alt = 'Código QR para hacer el Test Vocacional';
   }
@@ -764,6 +772,7 @@
     const pintar = () => {
       const estado = (window.Realtime.estadoRemoto && window.Realtime.estadoRemoto()) || 'local';
       const caido = estado === 'sin-conexion';
+      dom.estadoConexion.hidden = !caido;
       dom.estadoConexion.classList.toggle('hidden', !caido);
       if (caido) dom.estadoConexion.textContent = 'Sin conexión con el servidor · mostrando datos locales';
     };

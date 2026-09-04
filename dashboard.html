@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-<!-- data-dash-locked arranca puesto: el panel queda oculto por CSS aunque
-     JavaScript esté deshabilitado (fail-closed). El script de abajo lo quita
-     sólo si hay sesión válida. -->
+<!-- data-dash-locked arranca puesto EN EL MARKUP: el panel queda oculto aunque
+     fallen Tailwind, styles.css o el propio JavaScript (fail-closed). El script
+     inline de abajo lo quita antes del primer paint sólo si hay sesión válida. -->
 <html lang="es-AR" data-dash-locked="1">
 <head>
   <meta charset="UTF-8" />
@@ -13,25 +13,77 @@
   <link rel="icon" type="image/svg+xml"
         href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='32' fill='%2302447B'/%3E%3Ctext x='32' y='43' font-size='34' font-family='Arial,sans-serif' font-weight='bold' fill='white' text-anchor='middle'%3E11%3C/text%3E%3C/svg%3E" />
 
-  <!--
-    ============================================================
-    PANEL ANALÍTICO DEL STAND  (dashboard.html)
-    ============================================================
-    Panel modular de toma de decisiones. Se actualiza en vivo con
-    cada test (js/realtime.js sobre ntfy.sh, multi-dispositivo).
+  <!-- ==========================================================
+       ESTILOS CRÍTICOS INLINE
+       Funcionan SIEMPRE (aunque no carguen Tailwind CDN ni css/styles.css):
+       1) Bloqueo por PIN a prueba de fallos.
+       2) Ningún <svg> / imagen puede volverse gigante.
+       3) Contenedor y grillas básicas por si Tailwind no responde.
+       ========================================================== -->
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    [hidden] { display: none !important; }
 
-    Acceso restringido: PIN 'admin11' (js/dashboard-auth.js).
-    Sin PIN correcto → redirige a index.html.
+    /* Guardas de tamaño para íconos e imágenes */
+    svg { max-width: 100%; max-height: 100%; }
+    img { max-width: 100%; height: auto; }
+    .kpi-card__icono svg, .opcion-card__icono svg { width: 1.6rem; height: 1.6rem; }
+    .app-header__escudo, .escudo-fb { width: 44px; height: 44px; }
+    .app-footer__tit { height: 26px; width: auto; }
 
-    Estructura (todo reacciona al filtro por Jornada):
-      · Fila KPI: Encuestados · Edad promedio · Carrera más elegida
-      · Vista General:   Ranking 18 · Presencia 1ª/2ª/3ª · Áreas · Podio · Feed
-      · Vista Detallada: Desglose 18 + demografía (Situación · Localidad · Sexo/Edad)
+    /* Reja de acceso — visible mientras data-dash-locked esté presente */
+    .gate {
+      position: fixed; inset: 0; z-index: 99999;
+      display: flex; align-items: center; justify-content: center;
+      padding: 1rem; background: #05213f;
+    }
+    :root:not([data-dash-locked]) #gate-dashboard { display: none !important; }
+    .gate__caja {
+      width: 100%; max-width: 22rem;
+      background: #ffffff; color: #10233f; border-radius: 18px;
+      padding: 1.6rem 1.4rem; text-align: center;
+      box-shadow: 0 24px 60px -12px rgba(0,0,0,.5);
+    }
+    .gate__caja input {
+      width: 100%; padding: .6rem .8rem; margin: .6rem 0;
+      border: 1.5px solid #c3d0e2; border-radius: 10px; font-size: 1rem;
+    }
+    .gate__caja button {
+      width: 100%; padding: .7rem 1rem; border: 0; border-radius: 10px;
+      background: #02447B; color: #fff; font-weight: 700; font-size: 1rem; cursor: pointer;
+    }
+    .gate__caja > a { display: inline-block; margin-top: .6rem; color: #5a6b8a; font-size: .85rem; }
 
-    Identidad: paleta oficial + toggle claro/oscuro (js/theme.js).
-    Gráficos con Chart.js (CDN).
-    ============================================================
-  -->
+    /* Contenedor, grillas y tarjetas (respaldo si Tailwind / styles.css no aplican) */
+    .dash-contenedor { width: 100%; max-width: 80rem; margin-inline: auto; padding: 1.5rem 1rem 3rem; }
+    .dash-contenedor > * + * { margin-top: 1.5rem; }
+    .grid-kpi, .grid-panel { display: grid; gap: 1.5rem; grid-template-columns: 1fr; }
+    .grid-panel { grid-auto-flow: dense; }
+    .dash-panel, .kpi-card, .dash-toolbar {
+      background: rgba(255,255,255,.78); border: 1px solid rgba(120,120,180,.28);
+      border-radius: 18px; padding: 1.25rem;
+    }
+    .kpi-card { display: flex; align-items: center; gap: 1rem; }
+    .kpi-card__icono { flex: none; width: 3rem; height: 3rem; display: inline-flex;
+      align-items: center; justify-content: center; border-radius: 14px; background: rgba(123,121,177,.15); }
+    .dash-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; }
+    @media (min-width: 768px) {
+      .grid-kpi { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .grid-panel { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .panel-ancho { grid-column: span 2; }
+    }
+    @media (min-width: 1024px) {
+      .grid-panel { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    .panel-full { grid-column: 1 / -1; }
+    /* QR: marco blanco contenido y código acotado aunque falle styles.css */
+    .dash-qr { display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap; }
+    .dash-qr__marco { flex: none; padding: .5rem; background: #fff; border-radius: 12px; line-height: 0; }
+    .dash-qr__marco > div { width: 156px; height: 156px; }
+    .dash-qr__marco img, .dash-qr__marco canvas { width: 156px !important; height: 156px !important; display: block; }
+    .dash-qr__texto { min-width: 0; }
+    .dash-qr__titulo { font-size: 1.1rem; font-weight: 800; }
+  </style>
 
   <script>
     /* Desbloqueo temprano (antes del primer paint) SÓLO si hay sesión válida
@@ -39,12 +91,15 @@
     try {
       var _ok = localStorage.getItem('feria_ies11_dash_ok') === '1'
              || sessionStorage.getItem('feria_ies11_dash_ok') === '1';
-      if (_ok) document.documentElement.removeAttribute('data-dash-locked');
-    } catch (e) { /* se mantiene data-dash-locked */ }
+      if (_ok) {
+        document.documentElement.removeAttribute('data-dash-locked');
+        document.documentElement.setAttribute('data-dash-ok', '1');
+      }
+    } catch (e) { /* se mantiene bloqueado */ }
   </script>
 
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="js/theme.js"></script>
+  <script src="js/theme.js?v=3"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
@@ -53,30 +108,30 @@
   <link rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" />
 
-  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/styles.css?v=3" />
 </head>
 <body class="dash-body min-h-screen antialiased">
 
   <!-- ====================================================== -->
-  <!-- PANTALLA DE ACCESO (PIN)                                -->
+  <!-- PANTALLA DE ACCESO (PIN)  — visible mientras hay bloqueo -->
   <!-- ====================================================== -->
   <div id="gate-dashboard" class="gate">
     <form id="gate-form" class="gate__caja">
       <div class="gate__escudo">11</div>
       <h1 class="gate__titulo">Panel del stand</h1>
       <p class="gate__texto">Esta vista es sólo para la netbook del stand. Ingresá la clave de acceso.</p>
-      <input id="gate-pin" class="campo" type="password" inputmode="text"
+      <input id="gate-pin" type="password" inputmode="text"
              autocomplete="off" placeholder="Clave de acceso" aria-label="Clave de acceso" />
       <p id="gate-error" class="form-error" hidden></p>
-      <button type="submit" class="btn btn--primario w-full">Ingresar</button>
-      <a class="gate__volver" href="index.html">← Volver al Test Vocacional</a>
+      <button type="submit">Ingresar</button>
+      <a href="index.html">← Volver al Test Vocacional</a>
     </form>
   </div>
 
   <!-- ====================================================== -->
-  <!-- ENCABEZADO INSTITUCIONAL                                -->
+  <!-- ENCABEZADO  — hidden por defecto (fail-closed)          -->
   <!-- ====================================================== -->
-  <header class="app-header sticky top-0 z-30">
+  <header id="dash-header" class="app-header sticky top-0 z-30" hidden>
     <div class="app-header__inst">
       <img src="img/logo-ies11.png" alt="Escudo IES N.° 11" class="app-header__escudo"
            onerror="this.style.display='none';this.nextElementSibling.hidden=false" />
@@ -91,7 +146,7 @@
       <h1>Expo Educativa 2026</h1>
       <p>Panel Analítico · Test Vocacional</p>
       <div class="mt-1 flex items-center justify-center gap-3">
-        <span id="estado-conexion" class="hidden rounded-full px-3 py-0.5 text-xs font-semibold">
+        <span id="estado-conexion" class="hidden rounded-full px-3 py-0.5 text-xs font-semibold" hidden>
           Sin conexión con el servidor
         </span>
         <span id="reloj" class="font-mono text-sm tabular-nums opacity-80"></span>
@@ -107,23 +162,24 @@
   </header>
 
   <!-- ====================================================== -->
-  <!-- CONTENIDO                                               -->
+  <!-- CONTENIDO  — hidden por defecto (fail-closed)           -->
   <!-- ====================================================== -->
-  <main class="mx-auto w-full max-w-[1700px] space-y-6 p-6">
+  <main id="dash-main" class="dash-contenedor" hidden>
 
-    <!-- ================= TARJETA QR DE ACCESO =================
-         Flotante en pantallas grandes (stand) · en el flujo en pantallas chicas -->
-    <aside id="dash-qr" class="dash-qr" aria-label="Código QR para hacer el test">
-      <p class="dash-qr__titulo">¡Escaneá y realizá tu Test!</p>
-      <p class="dash-qr__sub">Ingresá desde tu celular</p>
+    <!-- ---------- Tarjeta QR de acceso ---------- -->
+    <section class="dash-panel dash-qr" aria-label="Código QR para hacer el test">
       <div class="dash-qr__marco">
         <div id="dash-qr-codigo" aria-hidden="true"></div>
       </div>
-      <a class="dash-qr__url" href="https://test-vocacional-ies11.netlify.app"
-         target="_blank" rel="noopener">test-vocacional-ies11.netlify.app</a>
-    </aside>
+      <div class="dash-qr__texto">
+        <p class="dash-qr__titulo">¡Escaneá y realizá tu Test!</p>
+        <p class="dash-qr__sub">Ingresá desde tu celular</p>
+        <a class="dash-qr__url" href="https://test-vocacional-ies11.netlify.app"
+           target="_blank" rel="noopener">test-vocacional-ies11.netlify.app</a>
+      </div>
+    </section>
 
-    <!-- Barra de control -->
+    <!-- ---------- Barra de control ---------- -->
     <div class="dash-toolbar">
       <label for="filtro-jornada" class="dash-rotulo">Jornada</label>
       <select id="filtro-jornada" class="campo dash-toolbar__select">
@@ -143,8 +199,8 @@
       </div>
     </div>
 
-    <!-- ================= FILA KPI ================= -->
-    <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <!-- ---------- Fila KPI ---------- -->
+    <section class="grid-kpi">
       <article class="kpi-card">
         <span class="kpi-card__icono" id="kpi-ico-total" aria-hidden="true"></span>
         <div class="min-w-0">
@@ -173,60 +229,55 @@
       </article>
     </section>
 
-    <!-- ================= VISTA GENERAL ================= -->
-    <div id="vista-general" class="grid grid-flow-row-dense grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <!-- ---------- Vista General ---------- -->
+    <div id="vista-general" class="grid-panel">
 
-      <!-- Ranking de las 18 tecnicaturas -->
-      <section class="dash-panel p-5 md:col-span-2 lg:col-span-2">
+      <section class="dash-panel panel-ancho">
         <p class="dash-rotulo">Ranking de las 18 tecnicaturas</p>
         <p class="panel-sub">Apariciones totales en el Top 3, ordenadas de mayor a menor · color por área</p>
-        <div class="mt-3 overflow-x-auto">
+        <div class="dash-scroll-x">
           <div class="dash-canvas-wrap dash-canvas-wrap--alto">
             <canvas id="grafico-carreras"></canvas>
           </div>
         </div>
       </section>
 
-      <!-- Áreas Vocacionales -->
-      <section class="dash-panel p-5 md:col-span-1 lg:col-span-1">
+      <section class="dash-panel">
         <p class="dash-rotulo">Áreas vocacionales</p>
         <p class="panel-sub">Distribución de afinidades por área de conocimiento · tocá un área para ver sus carreras</p>
-        <div class="dash-canvas-wrap mt-3">
+        <div class="dash-canvas-wrap">
           <canvas id="grafico-areas"></canvas>
         </div>
         <ul id="leyenda-areas" class="mt-4 space-y-1 text-sm"></ul>
       </section>
 
-      <!-- Presencia en 1ª / 2ª / 3ª afinidad -->
-      <section class="dash-panel p-5 md:col-span-2 lg:col-span-2">
+      <section class="dash-panel panel-ancho">
         <p class="dash-rotulo">Presencia en las 3 afinidades principales</p>
         <p class="panel-sub">Cuántas veces cada carrera fue elegida como 1.ª, 2.ª o 3.ª opción</p>
-        <div class="mt-3 overflow-x-auto">
+        <div class="dash-scroll-x">
           <div class="dash-canvas-wrap dash-canvas-wrap--alto">
             <canvas id="grafico-posiciones"></canvas>
           </div>
         </div>
       </section>
 
-      <!-- Podio -->
-      <section class="dash-panel p-5 md:col-span-1 lg:col-span-1">
+      <section class="dash-panel">
         <p class="dash-rotulo">🏆 Podio · Top 3 tecnicaturas</p>
         <p class="panel-sub">Las 3 carreras con más apariciones en el Top 3</p>
         <div id="podio" class="mt-3 space-y-2"></div>
       </section>
 
-      <!-- Feed -->
-      <section class="dash-panel p-5 md:col-span-2 lg:col-span-3">
+      <section class="dash-panel panel-full">
         <p class="dash-rotulo">Últimos participantes</p>
         <p class="panel-sub">Actividad reciente en tiempo real</p>
         <ul id="feed-actividad" class="mt-3 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2 text-sm"></ul>
       </section>
     </div>
 
-    <!-- ================= VISTA DETALLADA ================= -->
-    <div id="vista-detallada" class="space-y-6" hidden>
+    <!-- ---------- Vista Detallada ---------- -->
+    <div id="vista-detallada" hidden>
 
-      <section class="dash-panel p-6">
+      <section class="dash-panel">
         <div class="flex flex-wrap items-baseline justify-between gap-2">
           <div>
             <p class="dash-rotulo">Desglose por tecnicatura</p>
@@ -236,46 +287,40 @@
             Total participantes: <span id="detalle-total" class="font-bold">0</span>
           </p>
         </div>
-        <div class="mt-4 overflow-x-auto">
-          <div id="detalle-lista" class="space-y-2 min-w-[560px]"></div>
+        <div class="dash-scroll-x mt-4">
+          <div id="detalle-lista" class="space-y-2"></div>
         </div>
       </section>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <section class="dash-panel p-5">
+      <div class="grid-panel mt-6">
+        <section class="dash-panel">
           <p class="dash-rotulo">Situación educativa</p>
           <p class="panel-sub">Contexto académico de quienes participaron</p>
-          <div class="mt-3 overflow-x-auto">
-            <div id="demo-situacion" class="demo-lista min-w-[280px]"></div>
-          </div>
+          <div id="demo-situacion" class="demo-lista mt-3"></div>
         </section>
 
-        <section class="dash-panel p-5">
+        <section class="dash-panel">
           <p class="dash-rotulo">Origen · localidad</p>
           <p class="panel-sub">Procedencia de quienes participaron (localidades más frecuentes)</p>
-          <div class="mt-3 overflow-x-auto">
-            <div id="demo-localidad" class="demo-lista min-w-[280px]"></div>
-          </div>
+          <div id="demo-localidad" class="demo-lista mt-3"></div>
         </section>
 
-        <section class="dash-panel p-5">
+        <section class="dash-panel">
           <p class="dash-rotulo">Por género y edad</p>
           <p class="panel-sub">Distribución porcentual por género y por rango etario</p>
-          <div class="mt-3 overflow-x-auto">
-            <div class="min-w-[280px]">
-              <p class="demo-titulo">Género</p>
-              <div id="demo-genero" class="demo-lista mt-1"></div>
-              <p class="demo-titulo mt-4">Rango etario</p>
-              <div id="demo-edad" class="demo-lista mt-1"></div>
-            </div>
-          </div>
+          <p class="demo-titulo mt-3">Género</p>
+          <div id="demo-genero" class="demo-lista mt-1"></div>
+          <p class="demo-titulo mt-4">Rango etario</p>
+          <div id="demo-edad" class="demo-lista mt-1"></div>
         </section>
       </div>
     </div>
   </main>
 
-  <!-- Pie institucional -->
-  <footer class="app-footer app-footer--barra">
+  <!-- ====================================================== -->
+  <!-- PIE  — hidden por defecto (fail-closed)                 -->
+  <!-- ====================================================== -->
+  <footer id="dash-footer" class="app-footer app-footer--barra" hidden>
     <div class="app-footer__row">
       <a href="https://maps.app.goo.gl/infU3zgHUbP6jBt77" target="_blank" rel="noopener noreferrer">
         📍 Gral. Alvear 1145, Y4600 San Salvador de Jujuy
@@ -296,15 +341,25 @@
     </div>
   </footer>
 
-  <!-- Notificaciones flotantes -->
-  <div id="toasts" class="pointer-events-none fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3"></div>
+  <!-- Notificaciones flotantes — hidden por defecto -->
+  <div id="toasts" class="pointer-events-none fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3" hidden></div>
 
   <!-- ====================================================== -->
   <!-- SCRIPTS                                                 -->
   <!-- ====================================================== -->
-  <script src="js/questions.js"></script>
-  <script src="js/realtime.js"></script>
-  <script src="js/dashboard-auth.js"></script>
-  <script src="js/dashboard.js"></script>
+  <script>
+    /* Sesión ya validada: mostrar los contenedores YA (sin esperar a
+       dashboard-auth.js), para que no parpadee el login. */
+    if (document.documentElement.hasAttribute('data-dash-ok')) {
+      ['dash-header', 'dash-main', 'dash-footer', 'toasts'].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) el.hidden = false;
+      });
+    }
+  </script>
+  <script src="js/questions.js?v=3"></script>
+  <script src="js/realtime.js?v=3"></script>
+  <script src="js/dashboard-auth.js?v=3"></script>
+  <script src="js/dashboard.js?v=3"></script>
 </body>
 </html>

@@ -33,8 +33,9 @@
   /** Envuelve el contenido de un ícono (questions.js → ICONOS) en un <svg>. */
   function iconoSVG(nombre) {
     const inner = ICONOS[nombre] || ICONOS.estrella || '';
-    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${inner}</svg>`;
+    return `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+              style="max-width:100%;max-height:100%" aria-hidden="true">${inner}</svg>`;
   }
 
   // ----------------------------------------------------------
