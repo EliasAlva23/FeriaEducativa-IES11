@@ -783,11 +783,39 @@
   // ==========================================================
   // Reloj + estado de conexión
   // ==========================================================
+  // El switch sólo pausa/reanuda este setInterval visual: no toca
+  // Realtime.suscribirse/estadoRemoto ni el historial, así que la
+  // sincronización en tiempo real sigue funcionando igual, pausado o no.
+  let relojIntervalId = null;
+  let relojPausado = false;
+
+  function tickReloj() {
+    if (dom.reloj) dom.reloj.textContent = new Date().toLocaleTimeString('es-AR');
+  }
+
   function iniciarReloj() {
     if (!dom.reloj) return;
-    const tick = () => { dom.reloj.textContent = new Date().toLocaleTimeString('es-AR'); };
-    tick();
-    window.setInterval(tick, 1000);
+    tickReloj();
+    relojIntervalId = window.setInterval(tickReloj, 1000);
+  }
+
+  function alternarReloj() {
+    relojPausado = !relojPausado;
+    if (relojPausado) {
+      if (relojIntervalId) { window.clearInterval(relojIntervalId); relojIntervalId = null; }
+    } else {
+      tickReloj();
+      relojIntervalId = window.setInterval(tickReloj, 1000);
+    }
+    if (dom.reloj) dom.reloj.classList.toggle('reloj--pausado', relojPausado);
+    if (dom.btnReloj) {
+      dom.btnReloj.setAttribute('aria-pressed', String(relojPausado));
+      const etiqueta = relojPausado ? 'Reanudar el reloj' : 'Pausar el reloj';
+      dom.btnReloj.setAttribute('aria-label', etiqueta);
+      dom.btnReloj.title = etiqueta;
+      const icono = dom.btnReloj.querySelector('span');
+      if (icono) icono.textContent = relojPausado ? '▶' : '⏸';
+    }
   }
 
   function chequearConexion() {
@@ -819,6 +847,7 @@
     dom.podio = document.getElementById('podio');
     dom.toasts = document.getElementById('toasts');
     dom.reloj = document.getElementById('reloj');
+    dom.btnReloj = document.getElementById('btn-reloj-toggle');
     dom.estadoConexion = document.getElementById('estado-conexion');
     dom.canvasAreas = document.getElementById('grafico-areas');
     dom.canvasCarreras = document.getElementById('grafico-carreras');
@@ -842,6 +871,7 @@
     if (dom.kpiIcoCarrera) dom.kpiIcoCarrera.innerHTML = iconoSVG('estrella');
 
     iniciarReloj();
+    if (dom.btnReloj) dom.btnReloj.addEventListener('click', alternarReloj);
     chequearConexion();
     initQR();
 

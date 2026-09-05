@@ -263,6 +263,23 @@ a { color: var(--highlight); }
   :root:not([data-tema]) .tema-toggle .icono-luna { display: none; }
 }
 
+/* --- Switch del reloj (dashboard): sutil, no interfiere con el realtime --- */
+.reloj-toggle {
+  flex: none; height: 22px; width: 22px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.4); border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.12); color: #fff;
+  font-size: 0.6rem; line-height: 1; cursor: pointer;
+  transition: background var(--transicion), transform var(--transicion), box-shadow var(--transicion);
+}
+.reloj-toggle:hover { background: rgba(255, 255, 255, 0.26); }
+.reloj-toggle:active { transform: scale(0.88); }
+.reloj-toggle[aria-pressed="true"] {
+  background-image: var(--grad-acento); border-color: transparent;
+  box-shadow: 0 0 10px -2px rgba(124, 58, 237, 0.85);
+}
+#reloj.reloj--pausado { opacity: 0.45; }
+
 /* --- Menú de opciones (⋮) del header --- */
 .menu-opciones { position: relative; flex: none; }
 .menu-opciones__btn {
@@ -359,12 +376,21 @@ a { color: var(--highlight); }
    6. Paneles y formulario (app del estudiante)
    ----------------------------------------------------------- */
 .panel, .tarjeta, .resultado-card {
+  position: relative;
+  overflow: hidden;
   background: var(--bg-elevado);
   -webkit-backdrop-filter: var(--blur);
   backdrop-filter: var(--blur);
   border: 1px solid var(--borde);
   border-radius: var(--radio);
   box-shadow: var(--sombra-panel);
+}
+/* Filo superior con degradado vívido (rosa · violeta · azul · cian):
+   misma firma visual que las tarjetas del dashboard. */
+.panel::before, .tarjeta::before, .resultado-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background-image: var(--grad-acento);
 }
 
 .titulo-seccion { color: var(--texto); font-weight: 800; }
@@ -433,11 +459,11 @@ a { color: var(--highlight); }
   background-size: 180% 180%;
   background-position: 0% 50%;
   color: #fff;
-  box-shadow: 0 14px 34px -10px rgba(123, 121, 177, 0.7);
+  box-shadow: 0 14px 34px -10px rgba(124, 58, 237, 0.7);
 }
 .btn--primario:hover:not(:disabled) {
   background-position: 100% 50%;
-  box-shadow: 0 18px 44px -8px rgba(123, 121, 177, 0.85);
+  box-shadow: 0 18px 44px -8px rgba(124, 58, 237, 0.85);
 }
 
 .btn--solido {
@@ -477,7 +503,7 @@ a { color: var(--highlight); }
 .progreso-fill {
   height: 100%; border-radius: 9999px;
   background-image: var(--grad-acento);
-  box-shadow: 0 0 18px -2px rgba(123, 121, 177, 0.7);
+  box-shadow: 0 0 18px -2px rgba(124, 58, 237, 0.7);
   transition: width var(--transicion-lenta);
 }
 
@@ -510,7 +536,7 @@ a { color: var(--highlight); }
 .opcion-card--activa {
   border-color: var(--secundario);
   background: color-mix(in srgb, var(--secundario) 16%, var(--bg-solido));
-  box-shadow: 0 12px 28px -10px rgba(123, 121, 177, 0.6);
+  box-shadow: 0 12px 28px -10px rgba(124, 58, 237, 0.6);
 }
 :root[data-tema="oscuro"] .opcion-card--activa {
   background: color-mix(in srgb, var(--secundario) 26%, #10203f);
@@ -521,8 +547,11 @@ a { color: var(--highlight); }
   display: inline-flex; align-items: center; justify-content: center;
   border-radius: 12px;
   color: var(--secundario);
-  background: color-mix(in srgb, var(--secundario) 14%, transparent);
-  transition: background var(--transicion), color var(--transicion);
+  background-image: linear-gradient(135deg,
+    color-mix(in srgb, var(--secundario) 38%, transparent) 0%,
+    color-mix(in srgb, var(--highlight) 26%, transparent) 100%);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--secundario) 28%, transparent);
+  transition: background var(--transicion), color var(--transicion), box-shadow var(--transicion);
 }
 .opcion-card__icono svg { width: 1.5rem; height: 1.5rem; }
 .opcion-card--activa .opcion-card__icono {
@@ -1002,6 +1031,12 @@ a { color: var(--highlight); }
   border: 1px solid var(--borde);
   box-shadow: var(--glow-fuerte);
   animation: aparecer 240ms ease both;
+}
+.modal__caja::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  border-radius: var(--radio) var(--radio) 0 0;
+  background-image: var(--grad-acento);
 }
 .modal__x {
   position: absolute; top: 0.7rem; right: 0.8rem;

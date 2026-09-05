@@ -1,0 +1,59 @@
+# ============================================================
+# Infraestructura LOCAL de Docker -- Expo Educativa 2026 · IES N.° 11
+# ============================================================
+# Levanta 3 contenedores, todos opcionales y separados de lo que ya
+# funciona en producción (Netlify + ntfy.sh):
+#
+#   web     -> espejo del sitio estático, para probarlo con Docker
+#              en vez de "python -m http.server". http://localhost:8888
+#   db      -> PostgreSQL, con el esquema de db/schema.sql cargado
+#              automáticamente la primera vez. localhost:5432
+#   adminer -> panel web para ver/editar las tablas sin usar la
+#              terminal. http://localhost:8080
+#
+# Ver README-DOCKER.md para la guía paso a paso (cómo levantarlo,
+# entrar a Adminer, importar el CSV exportado, y cómo apagarlo sin
+# perder los datos).
+# ============================================================
+
+services:
+  web:
+    build: .
+    container_name: feria_ies11_web
+    ports:
+      - "8888:80"
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    container_name: feria_ies11_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: feria_ies11
+      POSTGRES_USER: feria_admin
+      # Cambiá esta clave si vas a dejar el puerto 5432 expuesto a algo
+      # más que tu propia compu (para el uso local del stand, alcanza).
+      POSTGRES_PASSWORD: cambiar_esta_clave
+    ports:
+      - "5432:5432"
+    volumes:
+      - feria_ies11_pgdata:/var/lib/postgresql/data
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U feria_admin -d feria_ies11"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  adminer:
+    image: adminer:latest
+    container_name: feria_ies11_adminer
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  feria_ies11_pgdata:

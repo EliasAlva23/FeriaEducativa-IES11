@@ -1,0 +1,12 @@
+.git
+.gitignore
+.gitattributes
+.claude
+.vscode
+.idea
+node_modules
+db
+docker-compose.yml
+Dockerfile
+README-DOCKER.md
+tools
