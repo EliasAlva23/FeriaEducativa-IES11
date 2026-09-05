@@ -30,9 +30,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_DB: ies11_expo
-      POSTGRES_USER: postres
-      # Cambiá esta clave si vas a dejar el puerto 5432 expuesto a algo
-      # más que tu propia compu (para el uso local del stand, alcanza).
+      POSTGRES_USER: postgres
       POSTGRES_PASSWORD: admin11
     ports:
       - "5432:5432"
@@ -40,7 +38,7 @@ services:
       - feria_ies11_pgdata:/var/lib/postgresql/data
       - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postres -d ies11_expo"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ies11_expo"]
       interval: 5s
       timeout: 5s
       retries: 10
