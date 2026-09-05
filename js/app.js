@@ -30,6 +30,63 @@
 
   const AUTO_AVANCE_MS = 300; // demora antes de pasar a la siguiente tarjeta
 
+  // Auto-guardado del progreso del test (para retomar tras minimizar el
+  // navegador, cambiar de pestaña o apagar la pantalla en el celular).
+  const CLAVE_PROGRESO = 'feria_ies11_progreso_test';
+  const PROGRESO_VENTANA_MS = 30 * 60 * 1000; // 30 min: pasado ese lapso se descarta
+
+  function guardarProgreso() {
+    if (!estado.participante || estado.resultado) return; // sólo con un test en curso
+    try {
+      window.localStorage.setItem(CLAVE_PROGRESO, JSON.stringify({
+        participante: estado.participante,
+        indiceActual: estado.indiceActual,
+        respuestas: estado.respuestas,
+        guardadoEn: Date.now(),
+      }));
+    } catch (e) { /* incógnito / sin espacio: el test sigue, sólo no persiste */ }
+  }
+
+  function limpiarProgreso() {
+    try { window.localStorage.removeItem(CLAVE_PROGRESO); } catch (e) { /* noop */ }
+  }
+
+  /** Si hay progreso reciente guardado, lo restaura y abre la pantalla del
+      test en la pregunta donde quedó. Devuelve true si retomó algo. */
+  function restaurarProgreso() {
+    let datos = null;
+    try { datos = JSON.parse(window.localStorage.getItem(CLAVE_PROGRESO) || 'null'); }
+    catch (e) { datos = null; }
+
+    const valido = datos && datos.participante &&
+      datos.respuestas && typeof datos.respuestas === 'object' &&
+      Number.isFinite(datos.guardadoEn) &&
+      (Date.now() - datos.guardadoEn) <= PROGRESO_VENTANA_MS;
+
+    if (!valido) { limpiarProgreso(); return false; }
+
+    const idx = Number.isInteger(datos.indiceActual) ? datos.indiceActual : 0;
+    estado.participante = datos.participante;
+    estado.respuestas = datos.respuestas;
+    estado.indiceActual = Math.min(Math.max(idx, 0), PREGUNTAS.length - 1);
+    estado.resultado = null;
+
+    dom.bienvenida.classList.add('hidden');
+    dom.resultado.classList.add('hidden');
+    dom.test.classList.remove('hidden');
+    renderPregunta();
+    mostrarAvisoReanudado();
+    return true;
+  }
+
+  function mostrarAvisoReanudado() {
+    const aviso = document.getElementById('test-reanudado');
+    if (!aviso) return;
+    aviso.hidden = false;
+    window.clearTimeout(mostrarAvisoReanudado._t);
+    mostrarAvisoReanudado._t = window.setTimeout(() => { aviso.hidden = true; }, 4500);
+  }
+
   /** Envuelve el contenido de un ícono (questions.js → ICONOS) en un <svg>. */
   function iconoSVG(nombre) {
     const inner = ICONOS[nombre] || ICONOS.estrella || '';
@@ -173,6 +230,7 @@
 
     actualizarProgreso();
     actualizarBotonesNavegacion();
+    guardarProgreso();
   }
 
   function seleccionarOpcion(preguntaId, opcionId) {
@@ -188,6 +246,7 @@
 
     actualizarProgreso();
     actualizarBotonesNavegacion();
+    guardarProgreso();
 
     // Avance automático (excepto en la última, que espera el botón "Ver resultado")
     if (estado.indiceActual < PREGUNTAS.length - 1) {
@@ -352,6 +411,7 @@
     };
 
     estado.resultado = registro;
+    limpiarProgreso(); // el test terminó: ya no hay progreso temporal que retomar
 
     // Publicar al dashboard (tiempo real). No bloquear la UI si falla.
     try {
@@ -483,6 +543,7 @@
   }
 
   function reiniciarApp() {
+    limpiarProgreso();
     estado.participante = null;
     estado.indiceActual = 0;
     estado.respuestas = {};
@@ -662,6 +723,16 @@
 
     inicializarMenuOpciones();
     inicializarModalCarrera();
+
+    // Auto-guardado: si el celular pasa a segundo plano (minimizar, cambiar
+    // de pestaña, apagar la pantalla) guardamos el progreso al instante.
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') guardarProgreso();
+    });
+    window.addEventListener('pagehide', guardarProgreso);
+
+    // Al abrir la página: si hay un test a medias reciente, lo retomamos.
+    restaurarProgreso();
 
     console.info('[app.js] Listo.',
       PREGUNTAS.length, 'preguntas ·', (CARRERAS || []).length, 'tecnicaturas.');

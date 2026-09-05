@@ -781,41 +781,106 @@
   }
 
   // ==========================================================
-  // Reloj + estado de conexión
+  // Cronómetro de jornada + estado de conexión
   // ==========================================================
-  // El switch sólo pausa/reanuda este setInterval visual: no toca
-  // Realtime.suscribirse/estadoRemoto ni el historial, así que la
-  // sincronización en tiempo real sigue funcionando igual, pausado o no.
+  // Es 100% visual: guarda los marcadores en sessionStorage y usa su
+  // propio setInterval. NO toca Realtime.suscribirse / estadoRemoto ni
+  // el historial, así que la sincronización en tiempo real sigue igual
+  // haya jornada abierta, cerrada o sin arrancar.
+  const JORNADA_INICIO = 'feria_ies11_jornada_inicio';
+  const JORNADA_FIN = 'feria_ies11_jornada_fin';
   let relojIntervalId = null;
-  let relojPausado = false;
+
+  function ssLeerNum(clave) {
+    try {
+      const v = window.sessionStorage.getItem(clave);
+      const n = v == null ? NaN : parseInt(v, 10);
+      return Number.isFinite(n) ? n : null;
+    } catch (e) { return null; }
+  }
+  function ssGuardar(clave, valor) {
+    try { window.sessionStorage.setItem(clave, String(valor)); } catch (e) { /* noop */ }
+  }
+  function ssBorrar(clave) {
+    try { window.sessionStorage.removeItem(clave); } catch (e) { /* noop */ }
+  }
+
+  /** milisegundos -> "HH:MM:SS" */
+  function formatoCrono(ms) {
+    const seg = Math.max(0, Math.floor(ms / 1000));
+    const dd = (n) => String(n).padStart(2, '0');
+    return `${dd(Math.floor(seg / 3600))}:${dd(Math.floor((seg % 3600) / 60))}:${dd(seg % 60)}`;
+  }
+
+  /** milisegundos -> "X hrs Y min" */
+  function formatoDuracion(ms) {
+    const totalMin = Math.max(0, Math.round(ms / 60000));
+    return `${Math.floor(totalMin / 60)} hrs ${totalMin % 60} min`;
+  }
+
+  function estadoJornada() {
+    const inicio = ssLeerNum(JORNADA_INICIO);
+    const fin = ssLeerNum(JORNADA_FIN);
+    if (inicio && fin) return 'finalizada';
+    if (inicio) return 'en-curso';
+    return 'inactiva';
+  }
 
   function tickReloj() {
-    if (dom.reloj) dom.reloj.textContent = new Date().toLocaleTimeString('es-AR');
+    if (!dom.reloj) return;
+    const estado = estadoJornada();
+    if (estado === 'en-curso') {
+      dom.reloj.textContent = formatoCrono(Date.now() - ssLeerNum(JORNADA_INICIO));
+    } else if (estado === 'finalizada') {
+      dom.reloj.textContent = formatoCrono(ssLeerNum(JORNADA_FIN) - ssLeerNum(JORNADA_INICIO));
+    } else {
+      dom.reloj.textContent = new Date().toLocaleTimeString('es-AR');
+    }
+  }
+
+  function pintarControlesJornada() {
+    const estado = estadoJornada();
+    const textos = {
+      'inactiva':   '▶ Iniciar Jornada',
+      'en-curso':   '■ Finalizar Jornada',
+      'finalizada': '↻ Nueva Jornada',
+    };
+    if (dom.btnJornada) {
+      dom.btnJornada.textContent = textos[estado];
+      dom.btnJornada.classList.toggle('jornada-btn--activa', estado === 'en-curso');
+    }
+    if (dom.reloj) {
+      dom.reloj.classList.toggle('jornada-reloj--corriendo', estado === 'en-curso');
+    }
+    if (dom.jornadaResumen) {
+      if (estado === 'finalizada') {
+        const dur = ssLeerNum(JORNADA_FIN) - ssLeerNum(JORNADA_INICIO);
+        dom.jornadaResumen.textContent = 'Duración de la jornada: ' + formatoDuracion(dur);
+        dom.jornadaResumen.hidden = false;
+      } else {
+        dom.jornadaResumen.textContent = '';
+        dom.jornadaResumen.hidden = true;
+      }
+    }
   }
 
   function iniciarReloj() {
     if (!dom.reloj) return;
     tickReloj();
+    pintarControlesJornada();
     relojIntervalId = window.setInterval(tickReloj, 1000);
   }
 
-  function alternarReloj() {
-    relojPausado = !relojPausado;
-    if (relojPausado) {
-      if (relojIntervalId) { window.clearInterval(relojIntervalId); relojIntervalId = null; }
+  function alternarJornada() {
+    const estado = estadoJornada();
+    if (estado === 'en-curso') {
+      ssGuardar(JORNADA_FIN, Date.now());           // finalizar: congela el contador
     } else {
-      tickReloj();
-      relojIntervalId = window.setInterval(tickReloj, 1000);
+      ssGuardar(JORNADA_INICIO, Date.now());        // iniciar (o arrancar una nueva)
+      ssBorrar(JORNADA_FIN);
     }
-    if (dom.reloj) dom.reloj.classList.toggle('reloj--pausado', relojPausado);
-    if (dom.btnReloj) {
-      dom.btnReloj.setAttribute('aria-pressed', String(relojPausado));
-      const etiqueta = relojPausado ? 'Reanudar el reloj' : 'Pausar el reloj';
-      dom.btnReloj.setAttribute('aria-label', etiqueta);
-      dom.btnReloj.title = etiqueta;
-      const icono = dom.btnReloj.querySelector('span');
-      if (icono) icono.textContent = relojPausado ? '▶' : '⏸';
-    }
+    tickReloj();
+    pintarControlesJornada();
   }
 
   function chequearConexion() {
@@ -847,7 +912,8 @@
     dom.podio = document.getElementById('podio');
     dom.toasts = document.getElementById('toasts');
     dom.reloj = document.getElementById('reloj');
-    dom.btnReloj = document.getElementById('btn-reloj-toggle');
+    dom.btnJornada = document.getElementById('btn-jornada');
+    dom.jornadaResumen = document.getElementById('jornada-resumen');
     dom.estadoConexion = document.getElementById('estado-conexion');
     dom.canvasAreas = document.getElementById('grafico-areas');
     dom.canvasCarreras = document.getElementById('grafico-carreras');
@@ -871,7 +937,7 @@
     if (dom.kpiIcoCarrera) dom.kpiIcoCarrera.innerHTML = iconoSVG('estrella');
 
     iniciarReloj();
-    if (dom.btnReloj) dom.btnReloj.addEventListener('click', alternarReloj);
+    if (dom.btnJornada) dom.btnJornada.addEventListener('click', alternarJornada);
     chequearConexion();
     initQR();
 

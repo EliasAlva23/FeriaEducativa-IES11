@@ -90,15 +90,26 @@
       }
       intentos += 1;
       input.value = '';
+
       if (intentos >= MAX_INTENTOS) {
-        window.location.replace('index.html');
+        if (error) {
+          error.hidden = false;
+          error.textContent = 'Se agotaron los intentos. Te llevamos al inicio del test, ' +
+            'pero podés volver a esta pantalla y probar de nuevo cuando quieras.';
+        }
+        input.disabled = true;
+        window.setTimeout(function () { window.location.replace('index.html'); }, 1800);
         return;
       }
+
       if (error) {
         error.hidden = false;
         var restan = MAX_INTENTOS - intentos;
-        error.textContent = 'Clave incorrecta. Te queda' +
-          (restan === 1 ? ' 1 intento.' : 'n ' + restan + ' intentos.');
+        error.textContent = restan === 1
+          ? 'Esa no es la clave. Te queda 1 intento. Si fallás te llevamos al inicio del test, ' +
+            'pero vas a poder volver y reintentar.'
+          : 'Esa no es la clave. Te quedan ' + restan + ' intentos. Si se agotan te llevamos al ' +
+            'inicio del test, pero vas a poder volver y reintentar.';
       }
       input.focus();
     });
