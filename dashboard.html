@@ -70,6 +70,11 @@
     .kpi-card__icono { flex: none; width: 3rem; height: 3rem; display: inline-flex;
       align-items: center; justify-content: center; border-radius: 14px; background: rgba(123,121,177,.15); }
     .dash-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; }
+    .dash-vista { display: inline-flex; gap: .25rem; padding: .25rem; margin-left: auto;
+      border-radius: 9999px; background: rgba(120,120,180,.12); }
+    .dash-vista__btn { border: 0; cursor: pointer; padding: .42rem .9rem; border-radius: 9999px;
+      background: transparent; font-weight: 700; font-size: .8rem; }
+    .dash-vista__btn.is-activa { color: #fff; background: #7B79B1; }
     @media (min-width: 640px)  { .grid-kpi { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
     @media (min-width: 768px)  { .grid-2col { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
     @media (min-width: 1024px) { .dash-fila { grid-template-columns: minmax(0, 1.7fr) minmax(300px, 1fr); } }
@@ -109,7 +114,7 @@
   <link rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" />
 
-  <link rel="stylesheet" href="css/styles.css?v=4" />
+  <link rel="stylesheet" href="css/styles.css?v=5" />
 </head>
 <body class="dash-body min-h-screen antialiased">
 
@@ -167,24 +172,33 @@
   <!-- ====================================================== -->
   <main id="dash-main" class="dash-contenedor" hidden>
 
-    <!-- ================================================== -->
-    <!-- FILA SUPERIOR · Columna principal (Jornada + KPIs) -->
-    <!--               · Columna lateral (Código QR)        -->
-    <!-- ================================================== -->
-    <div class="dash-fila">
-      <div class="dash-col">
-        <!-- Selector de jornada, alineado a la izquierda -->
-        <div class="dash-toolbar">
-          <label for="filtro-jornada" class="dash-rotulo">Jornada</label>
-          <select id="filtro-jornada" class="campo dash-toolbar__select">
-            <option value="global">Global (Toda la Expo)</option>
-            <option value="d1">Día 1</option>
-            <option value="d2">Día 2</option>
-            <option value="d3">Día 3</option>
-          </select>
-        </div>
+    <!-- Barra de control: Jornada + conmutador de vista -->
+    <div class="dash-toolbar">
+      <label for="filtro-jornada" class="dash-rotulo">Jornada</label>
+      <select id="filtro-jornada" class="campo dash-toolbar__select">
+        <option value="global">Global (Toda la Expo)</option>
+        <option value="d1">Día 1</option>
+        <option value="d2">Día 2</option>
+        <option value="d3">Día 3</option>
+      </select>
 
-        <!-- 3 tarjetas KPI de igual ancho, en fila -->
+      <div class="dash-vista" role="tablist" aria-label="Vista del panel">
+        <button type="button" class="dash-vista__btn is-activa" data-vista="general" role="tab" aria-selected="true">
+          Vista General
+        </button>
+        <button type="button" class="dash-vista__btn" data-vista="detallada" role="tab" aria-selected="false">
+          Vista Detallada
+        </button>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- VISTA GENERAL · KPIs, QR, Ranking Top, Áreas y Demografía     -->
+    <!-- ============================================================ -->
+    <div id="vista-general">
+
+      <!-- FILA SUPERIOR · KPIs (principal) | Código QR (lateral) -->
+      <div class="dash-fila">
         <section class="grid-kpi">
           <article class="kpi-card">
             <span class="kpi-card__icono" id="kpi-ico-total" aria-hidden="true"></span>
@@ -196,7 +210,7 @@
           </article>
 
           <article class="kpi-card">
-            <span class="kpi-card__icono" id="kpi-ico-edad" aria-hidden="true"></span>
+            <span class="kpi-card__icono kpi-card__icono--cian" id="kpi-ico-edad" aria-hidden="true"></span>
             <div class="min-w-0">
               <p class="kpi-card__valor" id="kpi-edad">—</p>
               <p class="kpi-card__label">Edad promedio</p>
@@ -205,7 +219,7 @@
           </article>
 
           <article class="kpi-card" id="kpi-carrera-card">
-            <span class="kpi-card__icono" id="kpi-ico-carrera" aria-hidden="true"></span>
+            <span class="kpi-card__icono kpi-card__icono--rosa" id="kpi-ico-carrera" aria-hidden="true"></span>
             <div class="min-w-0">
               <p class="kpi-card__valor kpi-card__valor--sm" id="kpi-carrera">—</p>
               <p class="kpi-card__label">Carrera más elegida</p>
@@ -213,113 +227,112 @@
             </div>
           </article>
         </section>
-      </div>
 
-      <!-- Columna lateral: Código QR de acceso al test -->
-      <section class="dash-panel dash-qr dash-qr--lateral" aria-label="Código QR para hacer el test">
-        <div class="dash-qr__marco">
-          <div id="dash-qr-codigo" aria-hidden="true"></div>
-        </div>
-        <div class="dash-qr__texto">
-          <p class="dash-qr__titulo">¡Escaneá y realizá tu Test!</p>
-          <p class="dash-qr__sub">Ingresá desde tu celular</p>
-          <a class="dash-qr__url" href="https://test-vocacional-ies11.netlify.app"
-             target="_blank" rel="noopener">test-vocacional-ies11.netlify.app</a>
-        </div>
-      </section>
-    </div>
-
-    <!-- ================================================== -->
-    <!-- SEGUNDA FILA · Ranking (principal) | Áreas (lateral)-->
-    <!-- ================================================== -->
-    <div class="dash-fila">
-      <section class="dash-panel">
-        <p class="dash-rotulo">Ranking de las 18 tecnicaturas</p>
-        <p class="panel-sub">Apariciones totales en el Top 3, ordenadas de mayor a menor · color por área</p>
-        <div class="dash-scroll-x">
-          <div class="dash-canvas-wrap dash-canvas-wrap--alto">
-            <canvas id="grafico-carreras"></canvas>
+        <!-- Columna lateral: Código QR de acceso al test -->
+        <section class="dash-panel dash-qr dash-qr--lateral" aria-label="Código QR para hacer el test">
+          <div class="dash-qr__marco">
+            <div id="dash-qr-codigo" aria-hidden="true"></div>
           </div>
-        </div>
-      </section>
-
-      <section class="dash-panel">
-        <p class="dash-rotulo">Áreas vocacionales</p>
-        <p class="panel-sub">Distribución de afinidades por área de conocimiento · tocá un área para ver sus carreras</p>
-        <div class="dash-canvas-wrap">
-          <canvas id="grafico-areas"></canvas>
-        </div>
-        <ul id="leyenda-areas" class="mt-4 space-y-1 text-sm"></ul>
-      </section>
-    </div>
-
-    <!-- ================================================== -->
-    <!-- FILAS INFERIORES · Grilla simétrica de 2 columnas   -->
-    <!-- ================================================== -->
-    <div class="grid-2col">
-      <section class="dash-panel">
-        <p class="dash-rotulo">Situación educativa</p>
-        <p class="panel-sub">Contexto académico de quienes participaron</p>
-        <div id="demo-situacion" class="demo-lista mt-3"></div>
-      </section>
-
-      <section class="dash-panel">
-        <p class="dash-rotulo">Origen · localidad</p>
-        <p class="panel-sub">Procedencia de quienes participaron (localidades más frecuentes)</p>
-        <div id="demo-localidad" class="demo-lista mt-3"></div>
-      </section>
-
-      <section class="dash-panel">
-        <p class="dash-rotulo">Por género y edad</p>
-        <p class="panel-sub">Distribución porcentual por género y por rango etario</p>
-        <p class="demo-titulo mt-3">Género</p>
-        <div id="demo-genero" class="demo-lista mt-1"></div>
-        <p class="demo-titulo mt-4">Rango etario</p>
-        <div id="demo-edad" class="demo-lista mt-1"></div>
-      </section>
-
-      <section class="dash-panel">
-        <p class="dash-rotulo">Presencia en las 3 afinidades principales</p>
-        <p class="panel-sub">Cuántas veces cada carrera fue elegida como 1.ª, 2.ª o 3.ª opción</p>
-        <div class="dash-scroll-x">
-          <div class="dash-canvas-wrap dash-canvas-wrap--alto">
-            <canvas id="grafico-posiciones"></canvas>
+          <div class="dash-qr__texto">
+            <p class="dash-qr__titulo">¡Escaneá y realizá tu Test!</p>
+            <p class="dash-qr__sub">Ingresá desde tu celular</p>
+            <a class="dash-qr__url" href="https://test-vocacional-ies11.netlify.app"
+               target="_blank" rel="noopener">test-vocacional-ies11.netlify.app</a>
           </div>
+        </section>
+      </div>
+
+      <!-- SEGUNDA FILA · Ranking (principal) | Áreas (lateral) -->
+      <div class="dash-fila">
+        <section class="dash-panel">
+          <p class="dash-rotulo">Ranking de las 18 tecnicaturas</p>
+          <p class="panel-sub">Apariciones totales en el Top 3, ordenadas de mayor a menor · color por área</p>
+          <div class="dash-scroll-x">
+            <div class="dash-canvas-wrap dash-canvas-wrap--alto">
+              <canvas id="grafico-carreras"></canvas>
+            </div>
+          </div>
+        </section>
+
+        <section class="dash-panel">
+          <p class="dash-rotulo">Áreas vocacionales</p>
+          <p class="panel-sub">Distribución de afinidades por área de conocimiento · tocá un área para ver sus carreras</p>
+          <div class="dash-canvas-wrap">
+            <canvas id="grafico-areas"></canvas>
+          </div>
+          <ul id="leyenda-areas" class="mt-4 space-y-1 text-sm"></ul>
+        </section>
+      </div>
+
+      <!-- FILAS INFERIORES · Demografía, grilla simétrica de 2 columnas -->
+      <div class="grid-2col">
+        <section class="dash-panel">
+          <p class="dash-rotulo">Situación educativa</p>
+          <p class="panel-sub">Contexto académico de quienes participaron</p>
+          <div id="demo-situacion" class="demo-lista mt-3"></div>
+        </section>
+
+        <section class="dash-panel">
+          <p class="dash-rotulo">Origen · localidad</p>
+          <p class="panel-sub">Procedencia de quienes participaron (localidades más frecuentes)</p>
+          <div id="demo-localidad" class="demo-lista mt-3"></div>
+        </section>
+
+        <section class="dash-panel">
+          <p class="dash-rotulo">Por género y edad</p>
+          <p class="panel-sub">Distribución porcentual por género y por rango etario</p>
+          <p class="demo-titulo mt-3">Género</p>
+          <div id="demo-genero" class="demo-lista mt-1"></div>
+          <p class="demo-titulo mt-4">Rango etario</p>
+          <div id="demo-edad" class="demo-lista mt-1"></div>
+        </section>
+
+        <section class="dash-panel">
+          <p class="dash-rotulo">Presencia en las 3 afinidades principales</p>
+          <p class="panel-sub">Cuántas veces cada carrera fue elegida como 1.ª, 2.ª o 3.ª opción</p>
+          <div class="dash-scroll-x">
+            <div class="dash-canvas-wrap dash-canvas-wrap--alto">
+              <canvas id="grafico-posiciones"></canvas>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Complementos: Podio + Feed -->
+      <div class="grid-2col">
+        <section class="dash-panel">
+          <p class="dash-rotulo">🏆 Podio · Top 3 tecnicaturas</p>
+          <p class="panel-sub">Las 3 carreras con más apariciones en el Top 3</p>
+          <div id="podio" class="mt-3 space-y-2"></div>
+        </section>
+
+        <section class="dash-panel">
+          <p class="dash-rotulo">Últimos participantes</p>
+          <p class="panel-sub">Actividad reciente en tiempo real</p>
+          <ul id="feed-actividad" class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm"></ul>
+        </section>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- VISTA DETALLADA · Desglose profundo de las 18 tecnicaturas    -->
+    <!-- ============================================================ -->
+    <div id="vista-detallada" hidden>
+      <section class="dash-panel">
+        <div class="flex flex-wrap items-baseline justify-between gap-2">
+          <div>
+            <p class="dash-rotulo">Desglose por tecnicatura</p>
+            <p class="panel-sub">Las 18 carreras con métricas extendidas: votos totales, porcentaje sobre el total de participantes y desglose por posición (1.ª / 2.ª / 3.ª opción)</p>
+          </div>
+          <p class="text-sm texto-suave">
+            Total participantes: <span id="detalle-total" class="font-bold">0</span>
+          </p>
+        </div>
+        <div class="dash-scroll-x mt-4">
+          <div id="detalle-lista"></div>
         </div>
       </section>
     </div>
-
-    <!-- ================================================== -->
-    <!-- COMPLEMENTOS · Podio + Feed  ·  Desglose de las 18  -->
-    <!-- ================================================== -->
-    <div class="grid-2col">
-      <section class="dash-panel">
-        <p class="dash-rotulo">🏆 Podio · Top 3 tecnicaturas</p>
-        <p class="panel-sub">Las 3 carreras con más apariciones en el Top 3</p>
-        <div id="podio" class="mt-3 space-y-2"></div>
-      </section>
-
-      <section class="dash-panel">
-        <p class="dash-rotulo">Últimos participantes</p>
-        <p class="panel-sub">Actividad reciente en tiempo real</p>
-        <ul id="feed-actividad" class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm"></ul>
-      </section>
-    </div>
-
-    <section class="dash-panel">
-      <div class="flex flex-wrap items-baseline justify-between gap-2">
-        <div>
-          <p class="dash-rotulo">Desglose por tecnicatura</p>
-          <p class="panel-sub">Las 18 carreras de más a menos votada · votos y % sobre el total de participantes</p>
-        </div>
-        <p class="text-sm texto-suave">
-          Total participantes: <span id="detalle-total" class="font-bold">0</span>
-        </p>
-      </div>
-      <div class="dash-scroll-x mt-4">
-        <div id="detalle-lista" class="space-y-2"></div>
-      </div>
-    </section>
   </main>
 
   <!-- ====================================================== -->
@@ -365,6 +378,6 @@
   <script src="js/questions.js?v=3"></script>
   <script src="js/realtime.js?v=3"></script>
   <script src="js/dashboard-auth.js?v=4"></script>
-  <script src="js/dashboard.js?v=4"></script>
+  <script src="js/dashboard.js?v=5"></script>
 </body>
 </html>

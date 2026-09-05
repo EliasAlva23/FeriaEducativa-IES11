@@ -32,10 +32,15 @@
   --fuente: 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system,
             'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 
-  /* Degradados */
-  --grad-header: linear-gradient(120deg, #02447B 0%, #346FB0 100%);
-  --grad-acento: linear-gradient(120deg, #B78FB6 0%, #7B79B1 42%, #346FB0 100%);
-  --grad-kpi: linear-gradient(150deg, #7B79B1 0%, #346FB0 55%, #02447B 100%);
+  /* Acento vívido adicional (cian energético, complementa la paleta oficial) */
+  --ciano: #06B6D4;
+
+  /* Degradados — versión viva: azules vibrantes, violeta y cian de alto contraste */
+  --grad-header: linear-gradient(120deg, #02447B 0%, #1868C0 60%, #06B6D4 130%);
+  /* Tonos -600 (no -500): con texto blanco encima (pill activa, cabecera de
+     tabla) el contraste se mantiene ≥ 4.5:1 en todo el degradado. */
+  --grad-acento: linear-gradient(120deg, #DB2777 0%, #7C3AED 45%, #2563EB 100%);
+  --grad-kpi: linear-gradient(150deg, #8B5CF6 0%, #3B82F6 55%, #06B6D4 100%);
   --grad-fondo: linear-gradient(160deg, #E2E8F0 0%, #DBEAFE 45%, #E9D5FF 100%);
 
   /* Superficies (vidrio, no blanco plano) */
@@ -89,8 +94,9 @@
    2. Tokens — TEMA OSCURO
    ----------------------------------------------------------- */
 :root[data-tema="oscuro"] {
-  --grad-header: linear-gradient(120deg, #04203f 0%, #123a63 100%);
-  --grad-kpi: linear-gradient(150deg, #4a3f86 0%, #1f4f86 55%, #06264a 100%);
+  --ciano: #22D3EE;
+  --grad-header: linear-gradient(120deg, #04203f 0%, #123a63 60%, #0e7490 130%);
+  --grad-kpi: linear-gradient(150deg, #7C3AED 0%, #2563EB 55%, #06B6D4 100%);
   --grad-fondo: linear-gradient(160deg, #030f22 0%, #0b1f3f 45%, #1c1440 100%);
 
   --bg: #060f24;
@@ -136,8 +142,9 @@
 /* Primera visita sin elección previa: seguir el sistema */
 @media (prefers-color-scheme: dark) {
   :root:not([data-tema]) {
-    --grad-header: linear-gradient(120deg, #04203f 0%, #123a63 100%);
-    --grad-kpi: linear-gradient(150deg, #4a3f86 0%, #1f4f86 55%, #06264a 100%);
+    --ciano: #22D3EE;
+    --grad-header: linear-gradient(120deg, #04203f 0%, #123a63 60%, #0e7490 130%);
+    --grad-kpi: linear-gradient(150deg, #7C3AED 0%, #2563EB 55%, #06B6D4 100%);
     --grad-fondo: linear-gradient(160deg, #030f22 0%, #0b1f3f 45%, #1c1440 100%);
     --bg: #060f24;
     --bg-elevado: rgba(24, 34, 66, 0.55);
@@ -621,12 +628,20 @@ a { color: var(--highlight); }
 .podio-valor { flex: none; font-size: 1.35rem; font-weight: 800; color: var(--texto); font-variant-numeric: tabular-nums; }
 
 .dash-panel {
+  position: relative;
+  overflow: hidden;
   padding: 1.35rem;
   background: var(--bg-elevado);
   -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
   border: 1px solid var(--borde);
   border-radius: var(--radio);
   box-shadow: var(--sombra-panel);
+}
+/* Filo superior con degradado vívido: firma visual de toda tarjeta/panel */
+.dash-panel::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background-image: var(--grad-acento);
 }
 /* Separación de los contenidos respecto del rótulo/subtítulo del panel
    (respaldo por si no cargan las clases mt-* de Tailwind) */
@@ -714,6 +729,23 @@ a { color: var(--highlight); }
   border-left: 2px solid var(--borde); padding-left: 0.6rem; margin-left: 0.25rem;
 }
 
+/* Conmutador de vista (General / Detallada) */
+.dash-vista {
+  display: inline-flex; gap: 0.25rem; padding: 0.25rem;
+  border-radius: 9999px; border: 1px solid var(--borde);
+  background: var(--bg-suave); margin-left: auto;
+}
+.dash-vista__btn {
+  border: 0; cursor: pointer; font-family: var(--fuente);
+  font-size: 0.8rem; font-weight: 700; color: var(--texto-suave);
+  padding: 0.42rem 0.9rem; border-radius: 9999px; background: transparent;
+  transition: color var(--transicion), background var(--transicion);
+}
+.dash-vista__btn.is-activa {
+  color: #fff; background-image: var(--grad-acento);
+  box-shadow: 0 8px 20px -8px rgba(124, 58, 237, 0.6);
+}
+
 /* Subtítulo explicativo bajo el rótulo de cada panel */
 .panel-sub { color: var(--texto-suave); font-size: 0.82rem; line-height: 1.35; margin-top: 0.25rem; }
 
@@ -732,12 +764,10 @@ a { color: var(--highlight); }
   .dash-canvas-wrap--alto { min-width: 0; }
 }
 
-/* La tabla de las 18: ancho mínimo para que sus columnas no se aplasten */
-#detalle-lista { min-width: 560px; }
-@media (min-width: 1024px) { #detalle-lista { min-width: 0; } }
-
 /* Fila KPI superior (la grilla la maneja Tailwind en el HTML) */
 .kpi-card {
+  position: relative;
+  overflow: hidden;
   display: flex; align-items: center; gap: 1rem;
   padding: 1.25rem 1.4rem;
   border-radius: var(--radio);
@@ -746,12 +776,46 @@ a { color: var(--highlight); }
   border: 1px solid var(--borde);
   box-shadow: var(--glow);
 }
+.kpi-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background-image: var(--grad-acento);
+}
+/* Ícono con fondo degradado vívido + resplandor de color (glow-effect).
+   3 variantes para diferenciar cada tarjeta KPI a simple vista. */
 .kpi-card__icono {
   flex: none; width: 3.1rem; height: 3.1rem;
   display: inline-flex; align-items: center; justify-content: center;
   border-radius: 16px;
   color: var(--secundario);
-  background: color-mix(in srgb, var(--secundario) 15%, transparent);
+  background-image: linear-gradient(135deg,
+    color-mix(in srgb, var(--secundario) 40%, transparent) 0%,
+    color-mix(in srgb, var(--highlight) 28%, transparent) 100%);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--secundario) 30%, transparent),
+    0 10px 24px -12px color-mix(in srgb, var(--secundario) 65%, transparent);
+}
+.kpi-card__icono--cian {
+  color: var(--ciano);
+  background-image: linear-gradient(135deg,
+    color-mix(in srgb, var(--ciano) 42%, transparent) 0%,
+    color-mix(in srgb, var(--highlight) 26%, transparent) 100%);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--ciano) 32%, transparent),
+    0 10px 24px -12px color-mix(in srgb, var(--ciano) 60%, transparent);
+}
+.kpi-card__icono--rosa {
+  color: #DB2777;
+  background-image: linear-gradient(135deg,
+    color-mix(in srgb, #EC4899 42%, transparent) 0%,
+    color-mix(in srgb, var(--secundario) 26%, transparent) 100%);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, #EC4899 32%, transparent),
+    0 10px 24px -12px color-mix(in srgb, #EC4899 60%, transparent);
+}
+:root[data-tema="oscuro"] .kpi-card__icono--rosa { color: #F472B6; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-tema]) .kpi-card__icono--rosa { color: #F472B6; }
 }
 .kpi-card__icono svg { width: 1.7rem; height: 1.7rem; }
 .kpi-card__valor { font-size: 2.6rem; font-weight: 900; line-height: 1.05; color: var(--texto); }
@@ -789,23 +853,35 @@ a { color: var(--highlight); }
 :root[data-tema="oscuro"] .btn--peligro { border-color: #fb7185; color: #fb7185; }
 :root[data-tema="oscuro"] .btn--peligro:hover:not(:disabled) { background: #fb7185; color: #10203f; }
 
-/* Vista detallada: filas de las 18 tecnicaturas */
-.detalle-fila {
-  display: grid;
-  grid-template-columns: 2rem 0.7rem minmax(0, 1.6fr) 2fr 3rem 3rem;
-  align-items: center; gap: 0.75rem;
-  padding: 0.55rem 0.7rem; border-radius: var(--radio-sm);
-  background: var(--bg-suave); border: 1px solid var(--borde);
+/* Vista detallada: tabla con métricas extendidas de las 18 tecnicaturas */
+.detalle-tabla {
+  width: 100%; min-width: 720px;
+  border-collapse: separate; border-spacing: 0 0.4rem;
 }
-.detalle-rank { font-weight: 800; color: var(--texto-suave); text-align: center; }
-.detalle-punto { width: 0.7rem; height: 0.7rem; border-radius: 9999px; }
-.detalle-datos { display: flex; flex-direction: column; min-width: 0; }
-.detalle-nombre { font-weight: 700; color: var(--texto); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.detalle-area { font-size: 0.72rem; font-weight: 700; }
-.detalle-barra { height: 0.55rem; border-radius: 9999px; background: var(--borde); overflow: hidden; }
-.detalle-barra > span { display: block; height: 100%; border-radius: 9999px; }
-.detalle-votos { font-weight: 800; font-size: 1.1rem; color: var(--texto); text-align: right; font-variant-numeric: tabular-nums; }
-.detalle-pct { font-weight: 700; color: var(--texto-suave); text-align: right; font-variant-numeric: tabular-nums; }
+.detalle-tabla thead th {
+  position: sticky; top: 0; z-index: 1;
+  background-image: var(--grad-acento); color: #fff;
+  font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em;
+  text-align: left; padding: 0.6rem 0.75rem; white-space: nowrap;
+}
+.detalle-tabla thead th:first-child { border-top-left-radius: 10px; border-bottom-left-radius: 10px; }
+.detalle-tabla thead th:last-child { border-top-right-radius: 10px; border-bottom-right-radius: 10px; }
+.detalle-tabla tbody tr { background: var(--bg-suave); transition: background var(--transicion); }
+.detalle-tabla tbody tr:hover { background: color-mix(in srgb, var(--highlight) 14%, var(--bg-suave)); }
+.detalle-td {
+  padding: 0.55rem 0.75rem;
+  border-top: 1px solid var(--borde); border-bottom: 1px solid var(--borde);
+  font-size: 0.85rem; color: var(--texto); white-space: nowrap;
+}
+.detalle-td:first-child { border-left: 1px solid var(--borde); border-top-left-radius: 10px; border-bottom-left-radius: 10px; }
+.detalle-td:last-child { border-right: 1px solid var(--borde); border-top-right-radius: 10px; border-bottom-right-radius: 10px; }
+.detalle-td--rank { font-weight: 800; color: var(--texto-suave); text-align: center; width: 2.2rem; }
+.detalle-td--nombre { font-weight: 700; white-space: normal; }
+.detalle-td--num { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+.detalle-punto {
+  display: inline-block; width: 0.6rem; height: 0.6rem; border-radius: 9999px;
+  margin-right: 0.5rem; box-shadow: 0 0 8px -1px currentColor;
+}
 
 /* -----------------------------------------------------------
    Tarjeta QR de acceso al test (tarjeta en el flujo, delimitada)

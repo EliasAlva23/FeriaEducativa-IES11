@@ -7,8 +7,8 @@
      a los tests nuevos (Realtime.suscribirse()).
    - Todo reacciona al filtro por Jornada (Global / Día 1-3).
    - Fila KPI: encuestados · edad promedio · carrera más elegida.
-   - Vista General: ranking 18 · presencia 1ª/2ª/3ª · áreas · podio · feed.
-   - Vista Detallada: desglose 18 + demografía (situación · localidad · sexo/edad).
+   - Vista General: KPIs · QR · ranking 18 · áreas · demografía · podio · feed.
+   - Vista Detallada: desglose profundo de las 18 (votos, % y 1ª/2ª/3ª opción).
    - Exportar CSV y "Limpiar datos de prueba" (ambos con PIN admin11).
 
    Depende de: js/questions.js, js/realtime.js, Chart.js
@@ -226,6 +226,22 @@
     refrescarGraficos(animar);
     refrescarDesglose();
     refrescarDemografia();
+  }
+
+  // ==========================================================
+  // Conmutador de vista (General / Detallada)
+  // ==========================================================
+  function setVista(v) {
+    const detallada = v === 'detallada';
+    if (dom.vistaGeneral) dom.vistaGeneral.hidden = detallada;
+    if (dom.vistaDetallada) dom.vistaDetallada.hidden = !detallada;
+    (dom.btnsVista || []).forEach((b) => {
+      const activa = b.dataset.vista === v;
+      b.classList.toggle('is-activa', activa);
+      b.setAttribute('aria-selected', String(activa));
+    });
+    // Los canvas ocultos no se miden bien: forzar re-layout al mostrarlos
+    window.setTimeout(() => window.dispatchEvent(new Event('resize')), 60);
   }
 
   // ==========================================================
@@ -536,7 +552,9 @@
   }
 
   // ==========================================================
-  // Desglose de las 18 tecnicaturas
+  // Desglose de las 18 tecnicaturas — vista detallada, métricas
+  // extendidas: votos totales, % sobre el total y desglose por
+  // posición (1.ª / 2.ª / 3.ª opción).
   // ==========================================================
   function refrescarDesglose() {
     if (!dom.detalleLista) return;
@@ -544,25 +562,41 @@
     if (dom.detalleTotal) dom.detalleTotal.textContent = String(total);
 
     const filas = CARRERAS
-      .map((c, orden) => ({ c, orden, votos: agregado.porCarrera[c.id] || 0 }))
+      .map((c, orden) => ({
+        c, orden,
+        votos: agregado.porCarrera[c.id] || 0,
+        pos: agregado.porPosicion[c.id] || [0, 0, 0],
+      }))
       .sort((a, b) => b.votos - a.votos || a.orden - b.orden);
 
-    dom.detalleLista.innerHTML = filas.map((f, i) => {
+    const cuerpo = filas.map((f, i) => {
       const area = AREA_POR_ID[f.c.area] || { nombre: '—', color: '#64748b' };
       const pct = total ? Math.round((f.votos / total) * 100) : 0;
       return `
-        <div class="detalle-fila">
-          <span class="detalle-rank">${i + 1}</span>
-          <span class="detalle-punto" style="background:${area.color}"></span>
-          <span class="detalle-datos">
-            <span class="detalle-nombre">${nombreCorto(f.c)}</span>
-            <span class="detalle-area" style="color:${area.color}">${area.nombre}</span>
-          </span>
-          <span class="detalle-barra"><span style="width:${pct}%;background:${area.color}"></span></span>
-          <span class="detalle-votos">${f.votos}</span>
-          <span class="detalle-pct">${pct}%</span>
-        </div>`;
+        <tr>
+          <td class="detalle-td detalle-td--rank">${i + 1}</td>
+          <td class="detalle-td detalle-td--nombre">
+            <span class="detalle-punto" style="background:${area.color};color:${area.color}"></span>${nombreCorto(f.c)}
+          </td>
+          <td class="detalle-td" style="color:${area.color}">${area.nombre}</td>
+          <td class="detalle-td detalle-td--num">${f.votos}</td>
+          <td class="detalle-td detalle-td--num">${pct}%</td>
+          <td class="detalle-td detalle-td--num">${f.pos[0]}</td>
+          <td class="detalle-td detalle-td--num">${f.pos[1]}</td>
+          <td class="detalle-td detalle-td--num">${f.pos[2]}</td>
+        </tr>`;
     }).join('');
+
+    dom.detalleLista.innerHTML = `
+      <table class="detalle-tabla">
+        <thead>
+          <tr>
+            <th>#</th><th>Tecnicatura</th><th>Área</th><th>Votos</th><th>%</th>
+            <th>1.ª op.</th><th>2.ª op.</th><th>3.ª op.</th>
+          </tr>
+        </thead>
+        <tbody>${cuerpo || '<tr><td class="detalle-td" colspan="8">Sin datos todavía.</td></tr>'}</tbody>
+      </table>`;
   }
 
   // ==========================================================
@@ -570,9 +604,14 @@
   // ==========================================================
   function refrescarDemografia() {
     const total = agregado.total || 0;
+    // Degradados vívidos con variables CSS: se adaptan solos al cambiar de
+    // tema (claro/oscuro), sin recalcular nada en JS.
+    const GRAD_HIGHLIGHT = 'linear-gradient(90deg, var(--highlight), var(--ciano))';
+    const GRAD_ACENTO = 'linear-gradient(90deg, var(--acento), var(--secundario))';
+    const GRAD_SECUNDARIO = 'linear-gradient(90deg, var(--secundario), var(--highlight))';
 
     if (dom.demoSituacion) {
-      dom.demoSituacion.innerHTML = filasDistribucion(agregado.porSituacion, total, tokenCSS('--highlight', '#346FB0'));
+      dom.demoSituacion.innerHTML = filasDistribucion(agregado.porSituacion, total, GRAD_HIGHLIGHT);
     }
 
     if (dom.demoLocalidad) {
@@ -583,11 +622,11 @@
         .reduce((s, [, n]) => s + n, 0);
       const conteo = Object.fromEntries(top);
       if (resto > 0) conteo['Otras'] = resto;
-      dom.demoLocalidad.innerHTML = filasDistribucion(conteo, total, tokenCSS('--acento', '#B78FB6'));
+      dom.demoLocalidad.innerHTML = filasDistribucion(conteo, total, GRAD_ACENTO);
     }
 
     if (dom.demoGenero) {
-      dom.demoGenero.innerHTML = filasDistribucion(agregado.porGenero, total, tokenCSS('--secundario', '#7B79B1'));
+      dom.demoGenero.innerHTML = filasDistribucion(agregado.porGenero, total, GRAD_SECUNDARIO);
     }
 
     if (dom.demoEdad) {
@@ -604,7 +643,7 @@
           return `
             <div class="demo-fila">
               <span class="demo-label">${etiqueta}</span>
-              <span class="demo-barra"><span style="width:${pct}%;background:${tokenCSS('--highlight', '#346FB0')}"></span></span>
+              <span class="demo-barra"><span style="width:${pct}%;background:${GRAD_HIGHLIGHT}"></span></span>
               <span class="demo-valor">${v}</span>
               <span class="demo-pct">${pct}%</span>
             </div>`;
@@ -794,6 +833,9 @@
     dom.demoLocalidad = document.getElementById('demo-localidad');
     dom.demoGenero = document.getElementById('demo-genero');
     dom.demoEdad = document.getElementById('demo-edad');
+    dom.vistaGeneral = document.getElementById('vista-general');
+    dom.vistaDetallada = document.getElementById('vista-detallada');
+    dom.btnsVista = Array.from(document.querySelectorAll('[data-vista]'));
 
     if (dom.kpiIcoTotal) dom.kpiIcoTotal.innerHTML = iconoSVG('personas');
     if (dom.kpiIcoEdad) dom.kpiIcoEdad.innerHTML = iconoSVG('grafico');
@@ -809,6 +851,7 @@
         recomputar(true);
       });
     }
+    dom.btnsVista.forEach((b) => b.addEventListener('click', () => setVista(b.dataset.vista)));
     if (dom.btnCsv) dom.btnCsv.addEventListener('click', exportarCSV);
     if (dom.btnLimpiar) dom.btnLimpiar.addEventListener('click', limpiarDatosPrueba);
     document.addEventListener('tema:cambio', aplicarTemaAGraficos);
